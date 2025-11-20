@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Términos y Condiciones - Todo Jardin</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles/main.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/terminos.css' %}">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="topbar">
+        <div class="topbar-container">
+            <div class="logo">
+                <a href="{% url 'mainPage' %}">
+                    <img src="{% static 'images/Logo.png' %}" alt="Todo Jardin Logo">
+                </a>
+                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="{% url 'productos' %}">Productos</a>
+                <a href="{% url 'terminos' %}" class="active">Términos y Condiciones</a>
+            </div>
+            <!-- Buscador en navegación -->
+            <div class="search-bar-nav">
+                <form method="GET" action="{% url 'productos' %}" class="search-form-nav">
+                    <input type="text" name="buscar" placeholder="Buscar productos..." class="search-input-nav" value="">
+                    <button type="submit" class="search-btn-nav">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <div class="nav-icons">
+                <div class="carrito-container">
+                    <a href="{% url 'carrito' %}" class="carrito-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        {% if cart_info.cantidad_total > 0 %}
+                        <span class="carrito-badge">{{ cart_info.cantidad_total }}</span>
+                        {% endif %}
+                    </a>
+                    
+                    <!-- Mini Carrito Dropdown -->
+                    {% if cart_info.tiene_items %}
+                    <div class="mini-carrito">
+                        <div class="mini-carrito-header">
+                            <h3>Mi Carrito</h3>
+                            <span class="mini-carrito-count">{{ cart_info.cantidad_total }} artículo{% if cart_info.cantidad_total != 1 %}s{% endif %}</span>
+                        </div>
+                        <div class="mini-carrito-items">
+                            {% for item_data in cart_info.items %}
+                            <div class="mini-carrito-item">
+                                {% if item_data.item.producto.imagen_principal %}
+                                <img src="{{ item_data.item.producto.imagen_principal.imagen.url }}" alt="{{ item_data.item.producto.nombre }}">
+                                {% else %}
+                                <img src="https://via.placeholder.com/60x60/4a7c2c/ffffff?text=Sin+Imagen" alt="{{ item_data.item.producto.nombre }}">
+                                {% endif %}
+                                <div class="mini-item-info">
+                                    <p class="mini-item-nombre">{{ item_data.item.producto.nombre }}</p>
+                                    <p class="mini-item-cantidad">{{ item_data.item.cantidad }} x {{ item_data.precio_unitario }}€</p>
+                                </div>
+                                <p class="mini-item-total">{{ item_data.total }}€</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mini-carrito-footer">
+                            <div class="mini-carrito-subtotal">
+                                <span>Subtotal:</span>
+                                <span class="subtotal-precio">{{ cart_info.subtotal }}€</span>
+                            </div>
+                            <div class="mini-carrito-acciones">
+                                <a href="{% url 'carrito' %}" class="btn-ver-carrito">Ver Carrito</a>
+                                <a href="{% url 'checkout' %}" class="btn-checkout">Finalizar Compra</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="mini-carrito mini-carrito-vacio">
+                        <p>Tu carrito está vacío</p>
+                        <a href="{% url 'productos' %}" class="btn-ver-productos">Ver Productos</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="user-circle">
+                <a href="{% url 'user' %}" class="user-link">
+                    <div class="circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                        </svg>
+                    </div>
+                </a>
+            </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="terminos-container">
+        <div class="terminos-header">
+            <h1>Términos y Condiciones</h1>
+            <p class="terminos-fecha">Última actualización: Noviembre 2025</p>
+        </div>
+
+        <div class="terminos-content">
+            <section class="terminos-section">
+                <h2>1. Información General</h2>
+                <p>Bienvenido a <strong>Todo Jardin</strong>, tu tienda online especializada en plantas, macetas y accesorios de jardinería. Al acceder y utilizar nuestro sitio web, aceptas cumplir con estos términos y condiciones.</p>
+                <p><strong>Razón Social:</strong> Todo Jardin S.L.</p>
+                <p><strong>CIF:</strong> B-41234567</p>
+                <p><strong>Dirección:</strong> Avenida Reina Mercedes, 45, 41012 Sevilla, España</p>
+            </section>
+
+            <section class="terminos-section">
+                <h2>2. Información de Contacto</h2>
+                <div class="contacto-grid">
+                    <div class="contacto-card">
+                        <div class="contacto-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                        </div>
+                        <h3>Email</h3>
+                        <p><a href="mailto:info@todojardin.es">info@todojardin.es</a></p>
+                        <p class="contacto-sub">Atención al cliente</p>
+                    </div>
+
+                    <div class="contacto-card">
+                        <div class="contacto-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            </svg>
+                        </div>
+                        <h3>Teléfono</h3>
+                        <p><a href="tel:+34954123456">+34 954 12 34 56</a></p>
+                        <p class="contacto-sub">Lun-Vie: 9:00-18:00h</p>
+                    </div>
+
+                    <div class="contacto-card">
+                        <div class="contacto-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </div>
+                        <h3>Dirección</h3>
+                        <p>Av. Reina Mercedes, 45</p>
+                        <p class="contacto-sub">41012 Sevilla, España</p>
+                    </div>
+
+                    <div class="contacto-card">
+                        <div class="contacto-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <h3>Horario</h3>
+                        <p>Lunes a Viernes: 9:00 - 18:00h</p>
+                        <p class="contacto-sub">Sábados: 10:00 - 14:00h</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="terminos-section">
+                <h2>3. Uso del Sitio Web</h2>
+                <p>Al utilizar Todo Jardin, te comprometes a:</p>
+                <ul>
+                    <li>Proporcionar información veraz y actualizada durante el registro</li>
+                    <li>Mantener la confidencialidad de tu cuenta y contraseña</li>
+                    <li>No utilizar el sitio para actividades ilegales o no autorizadas</li>
+                    <li>Respetar los derechos de propiedad intelectual de Todo Jardin</li>
+                </ul>
+            </section>
+
+            <section class="terminos-section">
+                <h2>4. Pedidos y Pagos</h2>
+                <p><strong>Proceso de compra:</strong> Todos los pedidos están sujetos a disponibilidad de stock y confirmación por email. Los precios incluyen IVA (21%) pero no incluyen gastos de envío, que se calcularán según destino.</p>
+                <p><strong>Métodos de pago:</strong> Aceptamos tarjetas de crédito/débito a través de nuestra pasarela de pago segura Braintree.</p>
+                <p><strong>Confirmación:</strong> Tras realizar un pedido, recibirás un email de confirmación. Deberás confirmar tu pedido haciendo clic en el enlace del correo para que se procese.</p>
+            </section>
+
+            <section class="terminos-section">
+                <h2>5. Envíos y Entregas</h2>
+                <p><strong>Envío gratis</strong> para pedidos superiores a 50€ en península.</p>
+                <p><strong>Plazos de entrega:</strong> 3-5 días laborables para península, 7-10 días para Islas Baleares y Canarias.</p>
+                <p><strong>Seguimiento:</strong> Recibirás un número de seguimiento una vez enviado tu pedido.</p>
+            </section>
+
+            <section class="terminos-section">
+                <h2>6. Devoluciones y Reembolsos</h2>
+                <p>Tienes <strong>14 días</strong> desde la recepción del pedido para ejercer tu derecho de desistimiento, siempre que las plantas lleguen en perfectas condiciones.</p>
+                <p><strong>Proceso:</strong> Contacta con nosotros en <a href="mailto:devoluciones@todojardin.es">devoluciones@todojardin.es</a> para iniciar el proceso. El reembolso se realizará en un plazo máximo de 14 días tras recibir el producto.</p>
+            </section>
+
+            <section class="terminos-section">
+                <h2>7. Garantías</h2>
+                <p>Todas nuestras plantas están garantizadas durante <strong>7 días</strong> desde la recepción. Si llegan dañadas o en mal estado, contáctanos inmediatamente para gestionar el reemplazo o reembolso.</p>
+                <p>Los productos no orgánicos (macetas, herramientas) tienen una garantía de <strong>2 años</strong> según la legislación española.</p>
+            </section>
+
+            <section class="terminos-section">
+                <h2>8. Protección de Datos</h2>
+                <p>En Todo Jardin respetamos tu privacidad. Los datos personales que nos proporcionas se utilizarán exclusivamente para gestionar tu pedido y mejorar nuestro servicio.</p>
+                <p><strong>Responsable:</strong> Todo Jardin S.L. (CIF: B-41234567)</p>
+                <p><strong>Finalidad:</strong> Gestión de pedidos, atención al cliente y comunicaciones comerciales (si has dado tu consentimiento)</p>
+                <p><strong>Derechos:</strong> Puedes ejercer tus derechos de acceso, rectificación, supresión y portabilidad escribiendo a <a href="mailto:privacidad@todojardin.es">privacidad@todojardin.es</a></p>
+            </section>
+
+            <section class="terminos-section">
+                <h2>9. Limitación de Responsabilidad</h2>
+                <p>Todo Jardin no se hace responsable de:</p>
+                <ul>
+                    <li>Daños causados por un uso inadecuado de los productos</li>
+                    <li>Retrasos en entregas causados por la empresa de transporte</li>
+                    <li>Problemas técnicos ajenos a nuestro control que impidan el acceso al sitio web</li>
+                </ul>
+            </section>
+
+            <section class="terminos-section">
+                <h2>10. Modificaciones</h2>
+                <p>Todo Jardin se reserva el derecho de modificar estos términos y condiciones en cualquier momento. Los cambios entrarán en vigor inmediatamente tras su publicación en el sitio web.</p>
+            </section>
+
+            <section class="terminos-section">
+                <h2>11. Legislación Aplicable</h2>
+                <p>Estos términos se rigen por la legislación española. Para cualquier controversia, las partes se someten a los juzgados y tribunales de Sevilla, España.</p>
+            </section>
+
+            <div class="terminos-footer">
+                <p class="terminos-gracias">Gracias por confiar en Todo Jardin 🌿</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Todo Jardin</h3>
+                <p>Tu tienda online de plantas y accesorios de jardinería</p>
+            </div>
+            <div class="footer-section">
+                <h4>Enlaces</h4>
+                <ul>
+                    <li><a href="{% url 'productos' %}">Productos</a></li>
+                    <li><a href="{% url 'terminos' %}">Términos y Condiciones</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contacto</h4>
+                <p>Email: info@todojardin.es</p>
+                <p>Tel: +34 954 12 34 56</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Todo Jardin. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+</body>
+</html>

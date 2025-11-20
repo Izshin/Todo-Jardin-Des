@@ -1,0 +1,174 @@
+/* Estilos para la página de login */
+
+.login-container {
+    max-width: 450px;
+    margin: 120px auto 50px;
+    padding: 40px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.login-container h2 {
+    color: #2d5016;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2rem;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #4a7c2c;
+    box-shadow: 0 0 0 3px rgba(74, 124, 44, 0.1);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #2d5016 0%, #4a7c2c 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 20px;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(45, 80, 22, 0.3);
+}
+
+.registro-link {
+    text-align: center;
+    margin-top: 20px;
+    color: #666;
+}
+
+.registro-link a {
+    color: #4a7c2c;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.registro-link a:hover {
+    color: #2d5016;
+    text-decoration: underline;
+}
+
+.error-message {
+    background-color: #fee;
+    color: #c33;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #c33;
+}
+
+/* Banner info de invitado */
+.info-invitado {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left: 4px solid #2196f3;
+    padding: 1.2rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.info-invitado svg {
+    color: #2196f3;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.info-invitado p {
+    color: #0d47a1;
+    font-size: 0.95rem;
+    margin: 0.3rem 0;
+    line-height: 1.4;
+}
+
+.info-invitado strong {
+    color: #1976d2;
+}
+
+/* Header de login con icono */
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header svg {
+    color: #4a7c2c;
+    margin-bottom: 1rem;
+}
+
+.login-header h2 {
+    color: #2d5016;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.login-header p {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.login-card {
+    /* Compatibilidad con template de establecer password */
+}
+
+.login-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #e0e0e0;
+}
+
+.login-footer p {
+    color: #666;
+    margin: 0;
+}
+
+.login-footer a {
+    color: #4a7c2c;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-footer a:hover {
+    color: #2d5016;
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .login-container {
+        margin: 90px 20px 30px;
+        padding: 30px 20px;
+    }
+}

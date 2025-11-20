@@ -1,0 +1,104 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos - Admin</title>
+    <link rel="stylesheet" href="{% static 'styles/main.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/admin.css' %}">
+    <style>
+        body {
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <nav class="topbar admin-topbar">
+        <div class="topbar-container">
+            <div class="logo">
+                <a href="{% url 'mainPage' %}">
+                    <img src="{% static 'images/Logoadmin.png' %}" alt="Todo Jardin Logo">
+                </a>
+                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="{% url 'productos' %}">Productos</a>
+                <div class="admin-dropdown">
+                    <a href="{% url 'admin_panel' %}" class="admin-link active">Panel de Administración</a>
+                    <div class="admin-dropdown-content">
+                        <a href="{% url 'admin_panel' %}">Dashboard</a>
+                        <a href="{% url 'admin_pedidos' %}">Pedidos</a>
+                        <a href="{% url 'admin_productos' %}" class="active">Productos</a>
+                        <a href="{% url 'admin_usuarios' %}">Usuarios</a>
+                    </div>
+                </div>
+            </div>
+            <div class="user-circle">
+                <a href="{% url 'user' %}" class="user-link">
+                    <div class="circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                        </svg>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="admin-container">
+        <h1>Gestión de Productos</h1>
+        
+        <div class="admin-header-actions">
+            <a href="{% url 'admin_panel' %}" class="btn-back">← Volver al Panel</a>
+            <a href="{% url 'admin_crear_producto' %}" class="btn-primary">+ Nuevo Producto</a>
+        </div>
+
+        <div class="admin-table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Marca</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                        <th>Destacado</th>
+                        <th>Disponible</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                    <tr>
+                        <td>{{ producto.id }}</td>
+                        <td>{{ producto.nombre }}</td>
+                        <td>{{ producto.categoria.nombre|default:"-" }}</td>
+                        <td>{{ producto.marca.nombre|default:"-" }}</td>
+                        <td>
+                            {% if producto.precio_oferta %}
+                            <s>€{{ producto.precio }}</s> <strong>€{{ producto.precio_oferta }}</strong>
+                            {% else %}
+                            €{{ producto.precio }}
+                            {% endif %}
+                        </td>
+                        <td>{{ producto.stock }}</td>
+                        <td>{% if producto.es_destacado %}✓{% else %}-{% endif %}</td>
+                        <td>{% if producto.esta_disponible %}✓{% else %}-{% endif %}</td>
+                        <td>
+                            <a href="{% url 'admin_editar_producto' producto.id %}" class="btn-admin btn-edit">Editar</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2rem;">No hay productos registrados</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>

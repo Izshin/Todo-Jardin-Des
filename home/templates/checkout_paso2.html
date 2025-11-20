@@ -1,0 +1,267 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Método de Pago - Todo Jardin</title>
+    <link rel="stylesheet" href="{% static 'styles/main.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/checkout.css' %}">
+    <script src="https://js.braintreegateway.com/web/dropin/1.43.0/js/dropin.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="topbar">
+        <div class="topbar-container">
+            <div class="logo">
+                <a href="{% url 'mainPage' %}">
+                    <img src="{% static 'images/Logo.png' %}" alt="Todo Jardin Logo">
+                </a>
+                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="{% url 'productos' %}">Productos</a>
+                <a href="{% url 'terminos' %}">Términos y Condiciones</a>
+            </div>
+            <!-- Buscador en navegación -->
+            <div class="search-bar-nav">
+                <form method="GET" action="{% url 'productos' %}" class="search-form-nav">
+                    <input type="text" name="buscar" placeholder="Buscar productos..." class="search-input-nav" value="">
+                    <button type="submit" class="search-btn-nav">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+            <div class="user-circle">
+                <a href="{% url 'user' %}" class="user-link">
+                    <div class="circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                        </svg>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="checkout-container">
+        <h1>Método de Pago</h1>
+
+        <!-- Indicador de pasos -->
+        <div class="checkout-steps">
+            <div class="step completed">
+                <div class="step-number">✓</div>
+                <div class="step-label">Envío</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step active">
+                <div class="step-number">2</div>
+                <div class="step-label">Pago</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-label">Confirmar</div>
+            </div>
+        </div>
+
+        <div class="checkout-content">
+            <div class="checkout-form">
+                <form method="POST" action="{% url 'checkout_paso3' %}" id="payment-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-section">
+                        <h2>Método de Pago</h2>
+                        
+                        <!-- Selector de método de pago -->
+                        <div class="metodos-pago">
+                            <div class="metodo-pago-opcion">
+                                <input type="radio" id="metodo-tarjeta" name="metodo_pago" value="tarjeta" checked>
+                                <label for="metodo-tarjeta">
+                                    <div class="metodo-icono">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                                        </svg>
+                                    </div>
+                                    <div class="metodo-info">
+                                        <h3>Tarjeta de Crédito/Débito</h3>
+                                        <p>Pago seguro con Braintree</p>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <div class="metodo-pago-opcion">
+                                <input type="radio" id="metodo-reembolso" name="metodo_pago" value="reembolso">
+                                <label for="metodo-reembolso">
+                                    <div class="metodo-icono">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="metodo-info">
+                                        <h3>Contra Reembolso</h3>
+                                        <p>Paga en efectivo al recibir</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Braintree Drop-in UI (solo visible con tarjeta) -->
+                        <div id="braintree-dropin-container" style="margin-top: 1.5rem; display: block;"></div>
+                        
+                        <div class="braintree-info" id="braintree-info" style="display: block;">
+                            <p><strong>Pago seguro procesado por Braintree</strong></p>
+                        </div>
+                        
+                        <div class="reembolso-info" id="reembolso-info" style="display: none; margin-top: 1.5rem;">
+                                <p style="margin: 0; color: #856404;"><strong>ℹ️ Información:</strong> Pagarás en efectivo al recibir tu pedido. El repartidor te entregará el paquete y cobrarás el importe total (€<span id="total-reembolso">{{ total }}</span>).</p>
+                        </div>
+                    </div>
+
+                    <div class="form-navigation">
+                        <a href="{% url 'checkout' %}" class="btn-volver">← Volver</a>
+                        <button type="submit" class="btn-pagar">Revisar Pedido (2/3)</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="checkout-resumen">
+                <h2>Resumen del Pedido</h2>
+                
+                <div class="resumen-productos">
+                    {% for item_data in items %}
+                    <div class="resumen-item">
+                        <div class="item-info">
+                            <span class="item-nombre">{{ item_data.item.producto.nombre }}</span>
+                            <span class="item-cantidad">x{{ item_data.item.cantidad }}</span>
+                        </div>
+                        <span class="item-precio">€{{ item_data.total }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="resumen-totales">
+                    <div class="resumen-linea">
+                        <span>Subtotal:</span>
+                        <span>€{{ subtotal }}</span>
+                    </div>
+                    <div class="resumen-linea">
+                        <span>IVA (21%):</span>
+                        <span>€{{ iva }}</span>
+                    </div>
+                    <div class="resumen-linea">
+                        <span>Envío:</span>
+                        <span>{% if coste_envio == 0 %}GRATIS{% else %}€{{ coste_envio }}{% endif %}</span>
+                    </div>
+                    <div class="resumen-total">
+                        <span>Total:</span>
+                        <span>€{{ total }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const form = document.getElementById('payment-form');
+        const submitButton = form.querySelector('button[type="submit"]');
+        const metodoTarjeta = document.getElementById('metodo-tarjeta');
+        const metodoReembolso = document.getElementById('metodo-reembolso');
+        const braintreeContainer = document.getElementById('braintree-dropin-container');
+        const braintreeInfo = document.getElementById('braintree-info');
+        const reembolsoInfo = document.getElementById('reembolso-info');
+        
+        let dropinInstance = null;
+        let braintreeInitialized = false;
+        
+        // Función para mostrar/ocultar secciones según método de pago
+        function actualizarMetodoPago() {
+            if (metodoTarjeta.checked) {
+                braintreeContainer.style.display = 'block';
+                braintreeInfo.style.display = 'block';
+                reembolsoInfo.style.display = 'none';
+                
+                // Inicializar Braintree si no está inicializado
+                if (!braintreeInitialized) {
+                    inicializarBraintree();
+                }
+            } else {
+                braintreeContainer.style.display = 'none';
+                braintreeInfo.style.display = 'none';
+                reembolsoInfo.style.display = 'block';
+            }
+        }
+        
+        // Event listeners para cambio de método
+        metodoTarjeta.addEventListener('change', actualizarMetodoPago);
+        metodoReembolso.addEventListener('change', actualizarMetodoPago);
+        
+        // Inicializar Braintree
+        function inicializarBraintree() {
+            {% if braintree_client_token %}
+            braintree.dropin.create({
+                authorization: '{{ braintree_client_token|safe }}',
+                container: '#braintree-dropin-container',
+                locale: 'es_ES',
+                translations: {
+                    'payingWith': 'Pagando con {{paymentSource}}',
+                    'chooseAnotherWayToPay': 'Elegir otro método de pago',
+                    'chooseAWayToPay': 'Elige un método de pago',
+                }
+            }, function(err, instance) {
+                if (err) {
+                    console.error('Error inicializando Braintree:', err);
+                    return;
+                }
+                dropinInstance = instance;
+                braintreeInitialized = true;
+            });
+            {% endif %}
+        }
+        
+        // Interceptar envío del formulario
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const metodoSeleccionado = document.querySelector('input[name="metodo_pago"]:checked').value;
+            
+            if (metodoSeleccionado === 'tarjeta') {
+                // Pago con tarjeta: obtener nonce de Braintree
+                if (dropinInstance) {
+                    dropinInstance.requestPaymentMethod(function(err, payload) {
+                        if (err) {
+                            console.error('Error obteniendo payment method:', err);
+                            alert('Error procesando el pago. Por favor, intenta nuevamente.');
+                            return;
+                        }
+                        
+                        // Crear input hidden con el nonce
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'payment_method_nonce';
+                        input.value = payload.nonce;
+                        form.appendChild(input);
+                        
+                        // Enviar formulario
+                        form.submit();
+                    });
+                } else {
+                    alert('Error: Sistema de pago no inicializado.');
+                }
+            } else {
+                // Contra reembolso: enviar directamente
+                form.submit();
+            }
+        });
+        
+        // Inicializar método de pago al cargar la página
+        actualizarMetodoPago();
+    </script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pedidos - Admin</title>
+    <link rel="stylesheet" href="{% static 'styles/main.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/admin.css' %}">
+</head>
+<body>
+    <nav class="topbar admin-topbar">
+        <div class="topbar-container">
+            <div class="logo">
+                <a href="{% url 'mainPage' %}">
+                    <img src="{% static 'images/Logoadmin.png' %}" alt="Todo Jardin Logo">
+                </a>
+                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="{% url 'productos' %}">Productos</a>
+                <div class="admin-dropdown">
+                    <a href="{% url 'admin_panel' %}" class="admin-link active">Panel de Administración</a>
+                    <div class="admin-dropdown-content">
+                        <a href="{% url 'admin_panel' %}">Dashboard</a>
+                        <a href="{% url 'admin_pedidos' %}" class="active">Pedidos</a>
+                        <a href="{% url 'admin_productos' %}">Productos</a>
+                        <a href="{% url 'admin_usuarios' %}">Usuarios</a>
+                    </div>
+                </div>
+            </div>
+            <div class="user-circle">
+                <a href="{% url 'user' %}" class="user-link">
+                    <div class="circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                        </svg>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="admin-container">
+        <h1>Gestión de Pedidos</h1>
+        
+        <a href="{% url 'admin_panel' %}" class="btn-back" style="margin-bottom: 1.5rem;">← Volver al Panel</a>
+
+        <div class="admin-table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Nº Pedido</th>
+                        <th>Cliente</th>
+                        <th>Fecha</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pedido in pedidos %}
+                    <tr>
+                        <td>#{{ pedido.numero_pedido }}</td>
+                        <td>{{ pedido.cliente.nombre }} {{ pedido.cliente.apellidos }}</td>
+                        <td>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                        <td>{{ pedido.total }}€</td>
+                        <td>
+                            <span class="estado-badge estado-{{ pedido.estado }}">
+                                {{ pedido.get_estado_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons-container">
+                                <form method="POST" action="{% url 'admin_actualizar_estado_pedido' pedido.id %}" class="estado-form">
+                                    {% csrf_token %}
+                                    <select name="estado" class="select-estado" onchange="this.form.submit()">
+                                        <option value="">Cambiar estado...</option>
+                                        <option value="pendiente" {% if pedido.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                                        <option value="confirmado" {% if pedido.estado == 'confirmado' %}selected{% endif %}>Confirmado</option>
+                                        <option value="procesando" {% if pedido.estado == 'procesando' %}selected{% endif %}>Procesando</option>
+                                        <option value="enviado" {% if pedido.estado == 'enviado' %}selected{% endif %}>Enviado</option>
+                                        <option value="entregado" {% if pedido.estado == 'entregado' %}selected{% endif %}>Entregado</option>
+                                        <option value="cancelado" {% if pedido.estado == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                                    </select>
+                                </form>
+                                <form method="POST" action="{% url 'admin_eliminar_pedido' pedido.id %}" class="delete-form" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este pedido?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-delete-small">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem;">No hay pedidos registrados</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>

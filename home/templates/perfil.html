@@ -1,0 +1,227 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Mi Perfil - Todo Jardin</title>
+
+    <link rel="stylesheet" href="{% static 'styles/main.css' %}">
+
+    <link rel="stylesheet" href="{% static 'styles/perfil.css' %}">
+
+</head>
+
+<body>
+
+    <!-- Top Navigation Bar -->
+
+    <nav class="topbar">
+
+        <div class="topbar-container">
+
+            <div class="logo">
+
+                <a href="{% url 'mainPage' %}">
+                    <img src="{% static 'images/Logo.png' %}" alt="Todo Jardin Logo">
+                </a>
+
+                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+
+            </div>
+
+            <div class="nav-links">
+
+
+                <a href="{% url 'productos' %}">Productos</a>
+
+                <a href="{% url 'terminos' %}">Términos y Condiciones</a>
+
+            </div>
+
+            <!-- Buscador en navegación -->
+            <div class="search-bar-nav">
+                <form method="GET" action="{% url 'productos' %}" class="search-form-nav">
+                    <input type="text" name="buscar" placeholder="Buscar productos..." class="search-input-nav" value="">
+                    <button type="submit" class="search-btn-nav">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <div class="user-circle">
+
+                <a href="{% url 'user' %}" class="user-link">
+
+                    <div class="circle">
+
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+
+                        </svg>
+
+                    </div>
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+    <!-- Perfil Container -->
+
+    <div class="perfil-container">
+
+        <div class="perfil-header">
+            <h2>Mi Perfil</h2>
+            <div class="header-actions">
+                <a href="{% url 'historial_pedidos' %}" class="btn-pedidos">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    Mis Pedidos
+                </a>
+                <a href="{% url 'logout' %}" class="btn-logout">Cerrar Sesión</a>
+            </div>
+        </div>
+
+        {% if es_invitado_sin_password %}
+        <div style="background: linear-gradient(135deg, #fff4e6 0%, #ffe0b2 100%); border-left: 4px solid #f39c12; padding: 1.2rem 1.5rem; border-radius: 12px; display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color: #f39c12; flex-shrink: 0; margin-top: 0.2rem;">
+                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                <polygon points="10.8,4 11.6,15.2 12.4,15.2 13.2,4"></polygon>
+                <rect x="11.4" y="17.6" width="1.2" height="1.2"></rect>
+            </svg>
+            <div>
+                <strong style="color: #e67e22; font-size: 1.1rem; display: block; margin-bottom: 0.3rem;">¡Crea una contraseña para tu cuenta!</strong>
+                <p style="color: #856404; font-size: 0.95rem; margin: 0; line-height: 1.5;">Tu cuenta fue creada como invitado. Establece una contraseña para proteger tu información y acceder a tu cuenta en cualquier momento. <a href="{% url 'establecer_password' %}" style="color: #4a7c2c; font-weight: 600; text-decoration: underline;">Establecer Contraseña</a></p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if success %}
+        <div class="success-message">
+            {{ success }}
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="error-message">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'perfil' %}">
+            {% csrf_token %}
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nombre">Nombre *</label>
+                    <input type="text" id="nombre" name="nombre" required maxlength="30" value="{{ cliente.nombre }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="apellidos">Apellidos *</label>
+                    <input type="text" id="apellidos" name="apellidos" required maxlength="100" value="{{ cliente.apellidos }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" name="email" required maxlength="100" value="{{ cliente.email }}">
+            </div>
+
+            <div class="form-group">
+                <label for="telefono">Teléfono *</label>
+                <input type="tel" id="telefono" name="telefono" required maxlength="15" value="{{ cliente.telefono }}">
+            </div>
+
+            <div class="form-group">
+                <label for="direccion">Dirección *</label>
+                <input type="text" id="direccion" name="direccion" required maxlength="200" value="{{ cliente.direccion }}">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ciudad">Ciudad *</label>
+                    <input type="text" id="ciudad" name="ciudad" required maxlength="50" value="{{ cliente.ciudad }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="codigo_postal">Código Postal *</label>
+                    <input type="text" id="codigo_postal" name="codigo_postal" required maxlength="10" value="{{ cliente.codigo_postal }}">
+                </div>
+            </div>
+
+            {% if not es_invitado_sin_password %}
+            <div class="password-section">
+                <h3>Cambiar Contraseña (opcional)</h3>
+                
+                <div class="form-group">
+                    <label for="password_actual">Contraseña Actual</label>
+                    <input type="password" id="password_actual" name="password_actual" maxlength="50">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password_nueva">Nueva Contraseña</label>
+                        <input type="password" id="password_nueva" name="password_nueva" maxlength="50">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password_confirmar">Confirmar Nueva Contraseña</label>
+                        <input type="password" id="password_confirmar" name="password_confirmar" maxlength="50">
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn-guardar">Guardar Cambios</button>
+
+        </form>
+
+        <div class="info-cuenta">
+            <p><strong>Miembro desde:</strong> {{ cliente.fecha_creacion|date:"d/m/Y" }}</p>
+        </div>
+
+        {% if not es_invitado_sin_password %}
+        <div class="danger-zone">
+            <h3>Zona Peligrosa</h3>
+            <p>Una vez que elimines tu cuenta, no hay vuelta atrás. Por favor, asegúrate.</p>
+            <button type="button" class="btn-eliminar" onclick="confirmarEliminacion()">Eliminar Cuenta</button>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <script>
+        function confirmarEliminacion() {
+            if (confirm('¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.')) {
+                if (confirm('¿Estás COMPLETAMENTE seguro? Se eliminarán todos tus datos.')) {
+                    window.location.href = '{% url "eliminar_cuenta" %}';
+                }
+            }
+        }
+        
+        function mostrarMensajePassword() {
+            alert('Crea una contraseña para acceder a tus pedidos.\n\nEstablece una contraseña usando el formulario de arriba para poder ver tu historial de pedidos.');
+        }
+    </script>
+
+</body>
+
+</html>

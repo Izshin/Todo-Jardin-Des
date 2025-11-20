@@ -1,0 +1,330 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Todo Jardin</title>
+
+    <link rel="stylesheet" href="{% static 'styles/main.css' %}">
+
+</head>
+
+<body>
+
+    <!-- Top Navigation Bar -->
+
+    <nav class="topbar">
+
+        <div class="topbar-container">
+
+            <div class="logo">
+
+                <a href="{% url 'mainPage' %}">
+                    <img src="{% static 'images/Logo.png' %}" alt="Todo Jardin Logo">
+                </a>
+
+                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+
+            </div>
+
+            <div class="nav-links">
+
+                <a href="{% url 'productos' %}">Productos</a>
+
+                <a href="{% url 'terminos' %}">Términos y Condiciones</a>
+
+                {% if user_is_admin %}
+                <a href="{% url 'admin_panel' %}" class="admin-link">Panel Admin</a>
+                {% endif %}
+
+            </div>
+
+            <!-- Buscador en navegación -->
+            <div class="search-bar-nav">
+                <form method="GET" action="{% url 'productos' %}" class="search-form-nav">
+                    <input type="text" name="buscar" placeholder="Buscar productos..." class="search-input-nav" value="">
+                    <button type="submit" class="search-btn-nav">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <div class="nav-icons">
+                <div class="carrito-container">
+                    <a href="{% url 'carrito' %}" class="carrito-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        {% if cart_info.cantidad_total > 0 %}
+                        <span class="carrito-badge">{{ cart_info.cantidad_total }}</span>
+                        {% endif %}
+                    </a>
+                    
+                    <!-- Mini Carrito Dropdown -->
+                    {% if cart_info.tiene_items %}
+                    <div class="mini-carrito">
+                        <div class="mini-carrito-header">
+                            <h3>Mi Carrito</h3>
+                            <span class="mini-carrito-count">{{ cart_info.cantidad_total }} artículo{% if cart_info.cantidad_total != 1 %}s{% endif %}</span>
+                        </div>
+                        <div class="mini-carrito-items">
+                            {% for item_data in cart_info.items %}
+                            <div class="mini-carrito-item">
+                                {% if item_data.item.producto.imagen_principal %}
+                                <img src="{{ item_data.item.producto.imagen_principal.imagen.url }}" alt="{{ item_data.item.producto.nombre }}">
+                                {% else %}
+                                <img src="https://via.placeholder.com/60x60/4a7c2c/ffffff?text=Sin+Imagen" alt="{{ item_data.item.producto.nombre }}">
+                                {% endif %}
+                                <div class="mini-item-info">
+                                    <p class="mini-item-nombre">{{ item_data.item.producto.nombre }}</p>
+                                    <p class="mini-item-cantidad">{{ item_data.item.cantidad }} x {{ item_data.precio_unitario }}€</p>
+                                </div>
+                                <p class="mini-item-total">{{ item_data.total }}€</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mini-carrito-footer">
+                            <div class="mini-carrito-subtotal">
+                                <span>Subtotal:</span>
+                                <span class="subtotal-precio">{{ cart_info.subtotal }}€</span>
+                            </div>
+                            <div class="mini-carrito-acciones">
+                                <a href="{% url 'carrito' %}" class="btn-ver-carrito">Ver Carrito</a>
+                                <a href="{% url 'checkout' %}" class="btn-checkout">Finalizar Compra</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="mini-carrito mini-carrito-vacio">
+                        <p>Tu carrito está vacío</p>
+                        <a href="{% url 'productos' %}" class="btn-ver-productos">Ver Productos</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="user-circle">
+
+                    <a href="{% url 'user' %}" class="user-link">
+
+                        <div class="circle">
+
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+
+                            </svg>
+
+                        </div>
+
+                    </a>
+
+                </div>
+            </div>
+
+        </div>
+
+    </nav>
+
+
+
+    <!-- Main Content Container -->
+
+    <main class="main-container">
+
+        <div class="hero-section">
+
+            <h2>Bienvenido a Todo Jardin, tu tienda de jardinería</h2>
+
+            <p>Descubre nuestras plantas y cactus únicos</p>
+            
+            <div style="margin-top: 1.5rem;">
+                <a href="{% url 'buscar_pedido' %}" style="background: linear-gradient(135deg, #447327 0%, #34531d 100%); color: #ffffff; padding: 0.9rem 2rem; border-radius: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.7rem; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(90, 144, 50, 0.35); font-size: 1.05rem;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(90, 144, 50, 0.45)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(90, 144, 50, 0.35)'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    Rastrear Mi Pedido
+                </a>
+            </div>
+
+        </div>
+
+
+
+        <!-- Auto-scrolling Image Gallery -->
+
+        <div class="slider-container">
+
+            <div class="slider">
+
+                <div class="slide">
+
+                    <img src="https://images.unsplash.com/photo-1509587584298-0f3b3a3a1797?w=800&h=400&fit=crop" alt="Cactus 1">
+
+                    <div class="slide-caption">Cactus Premium</div>
+
+                </div>
+
+                <div class="slide">
+
+                    <img src="https://images.unsplash.com/photo-1459156212016-c812468e2115?w=800&h=400&fit=crop" alt="Cactus 2">
+
+                    <div class="slide-caption">Colección de Cactus</div>
+
+                </div>
+
+                <div class="slide">
+
+                    <img src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=800&h=400&fit=crop" alt="Suculentas">
+
+                    <div class="slide-caption">Suculentas Decorativas</div>
+
+                </div>
+
+                <div class="slide">
+
+                    <img src="https://content.elmueble.com/medio/2023/01/30/35-plantas-de-interior-resistentes_00000000_85b501da_230130171349_900x900.jpg" alt="Plantas">
+
+                    <div class="slide-caption">Plantas de Interior</div>
+
+                </div>
+
+                <div class="slide">
+
+                    <img src="https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=800&h=400&fit=crop" alt="Jardín">
+
+                    <div class="slide-caption">Herramientas de Jardinería</div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Featured Products Section -->
+
+        <section class="featured-products">
+
+            <h2>Productos Destacados</h2>
+
+            <div class="products-grid">
+
+                {% if productos_destacados %}
+                    {% for producto in productos_destacados %}
+                    <a href="{% url 'producto_detalle' producto.id %}" class="product-card">
+
+                        <div class="product-image">
+
+                            {% if producto.imagen_principal %}
+                                <img src="{{ producto.imagen_principal.imagen.url }}" alt="{{ producto.nombre }}">
+                            {% else %}
+                                <img src="https://via.placeholder.com/300x300/4a7c2c/ffffff?text={{ producto.nombre }}" alt="{{ producto.nombre }}">
+                            {% endif %}
+                            {% if producto.precio_oferta %}
+                                <span class="badge-oferta">OFERTA</span>
+                            {% endif %}
+                            {% if producto.es_destacado %}
+                                <span class="badge-destacado">⭐ DESTACADO</span>
+                            {% endif %}
+
+                        </div>
+
+                        <h3>{{ producto.nombre }}</h3>
+
+                        {% if producto.precio_oferta %}
+                            <p class="price">
+                                <span class="precio-original">€{{ producto.precio }}</span>
+                                <span class="precio-oferta">€{{ producto.precio_oferta }}</span>
+                            </p>
+                        {% else %}
+                            <p class="price">€{{ producto.precio }}</p>
+                        {% endif %}
+
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="product-card">
+
+                        <div class="product-image">
+
+                            <img src="https://images.unsplash.com/photo-1509587584298-0f3b3a3a1797?w=300&h=300&fit=crop" alt="Cactus">
+
+                        </div>
+
+                        <h3>Cactus Dorado</h3>
+
+                        <p class="price">€12.99</p>
+
+                    </div>
+
+                    <div class="product-card">
+
+                        <div class="product-image">
+
+                            <img src="https://images.unsplash.com/photo-1459156212016-c812468e2115?w=300&h=300&fit=crop" alt="Cactus Mini">
+
+                        </div>
+
+                        <h3>Cactus Mini</h3>
+
+                        <p class="price">€8.99</p>
+
+                    </div>
+
+                    <div class="product-card">
+
+                        <div class="product-image">
+
+                            <img src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=300&h=300&fit=crop" alt="Suculentas">
+
+                        </div>
+
+                        <h3>Set de Suculentas</h3>
+
+                        <p class="price">€15.99</p>
+
+                    </div>
+
+                    <div class="product-card">
+
+                        <div class="product-image">
+
+                            <img src="https://www.nordicnest.es/assets/blobs/bergs-potter-maceta-kbenhavner-16-cm-rosa/38164-02_1_ProductImageMain-c91042c004.jpeg?preset=medium&dpr=2" alt="Macetas">
+
+                        </div>
+
+                        <h3>Macetas Decorativas</h3>
+
+                        <p class="price">€9.99</p>
+
+                    </div>
+                {% endif %}
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <script src="{% static 'styles/slider.js' %}"></script>
+
+</body>
+
+</html>
+

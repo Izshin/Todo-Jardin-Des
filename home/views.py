@@ -1,0 +1,1765 @@
+from django.http import HttpResponse
+from django.template import loader
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import (
+    Escaparate, Articulo, Cliente, 
+    Producto, Categoria, Marca, Carrito, ItemCarrito, Pedido, ItemPedido
+)
+from decimal import Decimal
+import uuid
+from django.utils import timezone
+from django.conf import settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+import braintree
+
+# Configurar Braintree
+gateway = braintree.BraintreeGateway(
+    braintree.Configuration(
+        braintree.Environment.Sandbox,
+        merchant_id=settings.BRAINTREE_MERCHANT_ID,
+        public_key=settings.BRAINTREE_PUBLIC_KEY,
+        private_key=settings.BRAINTREE_PRIVATE_KEY
+    )
+)
+
+def es_usuario_admin(request):
+    """Helper para verificar si el usuario actual es administrador"""
+    cliente_id = request.session.get('cliente_id')
+    if cliente_id:
+        try:
+            cliente = Cliente.objects.get(id=cliente_id)
+            return cliente.is_admin
+        except Cliente.DoesNotExist:
+            pass
+    return False
+
+def obtener_cantidad_carrito(request):
+    """Helper para obtener la cantidad de items en el carrito"""
+    cliente_id = request.session.get('cliente_id')
+    if not cliente_id:
+        return 0
+    
+    try:
+        carrito = Carrito.objects.get(cliente_id=cliente_id)
+        return carrito.items.count()
+    except Carrito.DoesNotExist:
+        return 0
+
+def obtener_info_carrito(request):
+    """Helper para obtener información completa del carrito para el mini-carrito"""
+    cliente_id = request.session.get('cliente_id')
+    if not cliente_id:
+        return {
+            'items': [],
+            'cantidad_total': 0,
+            'subtotal': Decimal('0.00'),
+            'tiene_items': False
+        }
+    
+    try:
+        carrito = Carrito.objects.get(cliente_id=cliente_id)
+        items = carrito.items.all()  # Todos los items para mostrar en el mini-carrito con scroll
+        
+        items_con_total = []
+        subtotal = Decimal('0.00')
+        
+        for item in items:
+            precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+            total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
+            subtotal += total_item
+            items_con_total.append({
+                'item': item,
+                'precio_unitario': precio,
+                'total': total_item
+            })
+        
+        return {
+            'items': items_con_total,
+            'cantidad_total': carrito.items.count(),
+            'subtotal': subtotal.quantize(Decimal('0.01')),
+            'tiene_items': carrito.items.exists()
+        }
+    except Carrito.DoesNotExist:
+        return {
+            'items': [],
+            'cantidad_total': 0,
+            'subtotal': Decimal('0.00'),
+            'tiene_items': False
+        }
+
+def index(request):
+    escaparate = Escaparate.objects.first()
+    
+    if not escaparate or not escaparate.articulo:
+        return HttpResponse("No hay escaparates o artículos disponibles.")
+    
+    articulo = escaparate.articulo
+    
+    contexto = {
+        'nombre_articulo': articulo.nombre
+    }
+    
+    plantilla = loader.get_template('index.html')
+    return HttpResponse(plantilla.render(contexto, request))
+
+def mainPage(request):
+    # Obtener productos destacados o en oferta
+    productos_destacados = Producto.objects.filter(
+        es_destacado=True
+    ) | Producto.objects.filter(
+        precio_oferta__isnull=False
+    )
+    productos_destacados = productos_destacados.distinct()[:4]  # Mostrar máximo 4 productos
+    
+    contexto = {
+        'productos_destacados': productos_destacados,
+        'cart_info': obtener_info_carrito(request),
+        'user_is_admin': es_usuario_admin(request)
+    }
+    
+    mainPage = loader.get_template('mainPage.html')
+    return HttpResponse(mainPage.render(contexto, request))
+
+def terminos(request):
+    """Vista para términos y condiciones"""
+    contexto = {
+        'cart_info': obtener_info_carrito(request)
+    }
+    return render(request, 'terminos.html', contexto)
+    return HttpResponse(mainPage.render(contexto, request))
+
+def user(request):
+    """Redirige a login o perfil dependiendo de si está autenticado"""
+    cliente_id = request.session.get('cliente_id')
+    es_invitado = request.session.get('es_invitado', False)
+    
+    if cliente_id:
+        # Si está autenticado, ir al perfil
+        return redirect('perfil')
+    else:
+        # Si es invitado sin haber comprado, redirigir a registro
+        if es_invitado:
+            return redirect('registro')
+        # Si no está autenticado, ir al login
+        return redirect('login')
+
+def login(request):
+    """Vista de login"""
+    # Si ya está autenticado, redirigir al perfil
+    if request.session.get('cliente_id'):
+        return redirect('perfil')
+    
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        
+        try:
+            # Buscar cliente por email
+            cliente = Cliente.objects.get(email=email)
+            
+            # Verificar si es una cuenta de invitado sin contraseña
+            if not cliente.password or cliente.password == '':
+                contexto = {
+                    'error': 'Esta cuenta fue creada como invitado y aún no tiene contraseña. Por favor, establece una contraseña primero.',
+                    'email': email,
+                    'es_invitado_sin_password': True,
+                }
+                return render(request, 'login.html', contexto)
+            
+            # Verificar contraseña
+            if cliente.password == password:
+                # Guardar el ID del cliente en la sesión
+                request.session['cliente_id'] = cliente.id
+                return redirect('perfil')
+            else:
+                contexto = {
+                    'error': 'Email o contraseña incorrectos',
+                    'email': email,
+                }
+                return render(request, 'login.html', contexto)
+        except Cliente.DoesNotExist:
+            contexto = {
+                'error': 'Email o contraseña incorrectos',
+                'email': email,
+            }
+            return render(request, 'login.html', contexto)
+    
+    return render(request, 'login.html')
+
+def registro(request):
+    """Vista de registro"""
+    # Si ya está autenticado, redirigir al perfil
+    if request.session.get('cliente_id'):
+        return redirect('perfil')
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        nombre = request.POST.get('nombre')
+        apellidos = request.POST.get('apellidos')
+        email = request.POST.get('email')
+        telefono = request.POST.get('telefono')
+        direccion = request.POST.get('direccion')
+        ciudad = request.POST.get('ciudad')
+        codigo_postal = request.POST.get('codigo_postal')
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        
+        # Validaciones
+        if password != password_confirm:
+            contexto = {
+                'error': 'Las contraseñas no coinciden',
+                'nombre': nombre,
+                'apellidos': apellidos,
+                'email': email,
+                'telefono': telefono,
+                'direccion': direccion,
+                'ciudad': ciudad,
+                'codigo_postal': codigo_postal,
+            }
+            return render(request, 'registro.html', contexto)
+        
+        # Verificar si el email ya existe
+        if Cliente.objects.filter(email=email).exists():
+            contexto = {
+                'error': 'Este email ya está registrado',
+                'nombre': nombre,
+                'apellidos': apellidos,
+                'telefono': telefono,
+                'direccion': direccion,
+                'ciudad': ciudad,
+                'codigo_postal': codigo_postal,
+            }
+            return render(request, 'registro.html', contexto)
+        
+        # Crear el cliente
+        try:
+            cliente = Cliente.objects.create(
+                nombre=nombre,
+                apellidos=apellidos,
+                email=email,
+                telefono=telefono,
+                direccion=direccion,
+                ciudad=ciudad,
+                codigo_postal=codigo_postal,
+                password=password
+            )
+            
+            # Autenticar automáticamente después del registro
+            request.session['cliente_id'] = cliente.id
+            return redirect('perfil')
+            
+        except Exception as e:
+            contexto = {
+                'error': f'Error al crear la cuenta: {str(e)}',
+                'nombre': nombre,
+                'apellidos': apellidos,
+                'email': email,
+                'telefono': telefono,
+                'direccion': direccion,
+                'ciudad': ciudad,
+                'codigo_postal': codigo_postal,
+            }
+            return render(request, 'registro.html', contexto)
+    
+    # Si es GET, mostrar el formulario vacío
+    return render(request, 'registro.html')
+
+def perfil(request):
+    """Vista del perfil de usuario"""
+    cliente_id = request.session.get('cliente_id')
+    
+    if not cliente_id:
+        return redirect('login')
+    
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        # Si el cliente no existe, cerrar sesión y redirigir al login
+        request.session.flush()
+        return redirect('login')
+    
+    if request.method == 'POST':
+        # Actualizar datos del cliente
+        cliente.nombre = request.POST.get('nombre')
+        cliente.apellidos = request.POST.get('apellidos')
+        cliente.email = request.POST.get('email')
+        cliente.telefono = request.POST.get('telefono')
+        cliente.direccion = request.POST.get('direccion')
+        cliente.ciudad = request.POST.get('ciudad')
+        cliente.codigo_postal = request.POST.get('codigo_postal')
+        
+        # Cambiar contraseña si se proporcionó
+        password_actual = request.POST.get('password_actual')
+        password_nueva = request.POST.get('password_nueva')
+        password_confirmar = request.POST.get('password_confirmar')
+        
+        if password_actual or password_nueva or password_confirmar:
+            if password_actual != cliente.password:
+                contexto = {
+                    'cliente': cliente,
+                    'error': 'La contraseña actual es incorrecta'
+                }
+                return render(request, 'perfil.html', contexto)
+            
+            if password_nueva != password_confirmar:
+                contexto = {
+                    'cliente': cliente,
+                    'error': 'Las contraseñas nuevas no coinciden'
+                }
+                return render(request, 'perfil.html', contexto)
+            
+            if password_nueva:
+                cliente.password = password_nueva
+        
+        try:
+            cliente.save()
+            contexto = {
+                'cliente': cliente,
+                'success': 'Perfil actualizado correctamente'
+            }
+            return render(request, 'perfil.html', contexto)
+        except Exception as e:
+            contexto = {
+                'cliente': cliente,
+                'error': f'Error al actualizar el perfil: {str(e)}'
+            }
+            return render(request, 'perfil.html', contexto)
+    
+    # Verificar si es invitado sin contraseña
+    es_invitado_sin_password = not cliente.password or cliente.password == ''
+    
+    contexto = {
+        'cliente': cliente,
+        'es_invitado_sin_password': es_invitado_sin_password
+    }
+    return render(request, 'perfil.html', contexto)
+
+def logout(request):
+    """Cerrar sesión"""
+    request.session.flush()
+    return redirect('mainPage')
+
+def eliminar_cuenta(request):
+    """Eliminar cuenta de usuario"""
+    cliente_id = request.session.get('cliente_id')
+    
+    if not cliente_id:
+        return redirect('login')
+    
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+        cliente.delete()
+        request.session.flush()
+        return redirect('mainPage')
+    except Cliente.DoesNotExist:
+        request.session.flush()
+        return redirect('login')
+
+def productos(request):
+    """Vista de listado de productos con filtros múltiples"""
+    from django.db.models import Q
+    
+    # Obtener todos los productos disponibles
+    productos_list = Producto.objects.filter(esta_disponible=True)
+    
+    # Filtro por búsqueda (busca en nombre, descripción, marca y categoría)
+    buscar = request.GET.get('buscar', '').strip()
+    if buscar:
+        productos_list = productos_list.filter(
+            Q(nombre__icontains=buscar) |
+            Q(descripcion__icontains=buscar) |
+            Q(marca__nombre__icontains=buscar) |
+            Q(categoria__nombre__icontains=buscar)
+        ).distinct()
+    
+    # Filtro por categorías (permite múltiples)
+    categorias_ids = request.GET.getlist('categoria')
+    categorias_seleccionadas = []
+    if categorias_ids:
+        categorias_seleccionadas = Categoria.objects.filter(id__in=categorias_ids)
+        productos_list = productos_list.filter(categoria__id__in=categorias_ids)
+    
+    # Filtro por marcas (permite múltiples)
+    marcas_ids = request.GET.getlist('marca')
+    marcas_seleccionadas = []
+    if marcas_ids:
+        marcas_seleccionadas = Marca.objects.filter(id__in=marcas_ids)
+        productos_list = productos_list.filter(marca__id__in=marcas_ids)
+    
+    # Filtro por ofertas
+    mostrar_ofertas = request.GET.get('ofertas')
+    if mostrar_ofertas:
+        productos_list = productos_list.filter(precio_oferta__isnull=False)
+    
+    # Filtro por destacados
+    mostrar_destacados = request.GET.get('destacados')
+    if mostrar_destacados:
+        productos_list = productos_list.filter(es_destacado=True)
+    
+    # Ordenamiento
+    orden = request.GET.get('orden', 'nombre')
+    if orden == 'precio-asc':
+        productos_list = productos_list.order_by('precio')
+    elif orden == 'precio-desc':
+        productos_list = productos_list.order_by('-precio')
+    elif orden == 'destacados':
+        productos_list = productos_list.order_by('-es_destacado', 'nombre')
+    else:
+        productos_list = productos_list.order_by('nombre')
+    
+    # Obtener todas las categorías y marcas para los filtros
+    categorias = Categoria.objects.all()
+    marcas = Marca.objects.filter(productos__isnull=False).distinct()
+    
+    # Crear lista de IDs seleccionados para facilitar en el template
+    categorias_ids_seleccionadas = [int(id) for id in categorias_ids]
+    marcas_ids_seleccionadas = [int(id) for id in marcas_ids]
+    
+    contexto = {
+        'productos': productos_list,
+        'categorias': categorias,
+        'marcas': marcas,
+        'categorias_seleccionadas': categorias_seleccionadas,
+        'marcas_seleccionadas': marcas_seleccionadas,
+        'categorias_ids_seleccionadas': categorias_ids_seleccionadas,
+        'marcas_ids_seleccionadas': marcas_ids_seleccionadas,
+        'buscar': buscar,
+        'mostrar_ofertas': mostrar_ofertas,
+        'mostrar_destacados': mostrar_destacados,
+        'orden': orden,
+        'cart_info': obtener_info_carrito(request),
+        'user_is_admin': es_usuario_admin(request)
+    }
+    
+    return render(request, 'productos.html', contexto)
+
+def producto_detalle(request, producto_id):
+    """Vista de detalle de un producto"""
+    producto = get_object_or_404(Producto, id=producto_id)
+    
+    # Obtener productos relacionados de la misma categoría
+    productos_relacionados = Producto.objects.filter(
+        categoria=producto.categoria,
+        esta_disponible=True
+    ).exclude(id=producto.id)[:4]
+    
+    contexto = {
+        'producto': producto,
+        'productos_relacionados': productos_relacionados,
+        'cart_info': obtener_info_carrito(request),
+        'user_is_admin': es_usuario_admin(request)
+    }
+    
+    return render(request, 'producto_detalle.html', contexto)
+
+def carrito(request):
+    """Vista del carrito de compras"""
+    cliente_id = request.session.get('cliente_id')
+    
+    if not cliente_id:
+        # Permitir ver carrito vacío sin estar logueado
+        return render(request, 'carrito.html', {
+            'items': [],
+            'subtotal': Decimal('0.00'),
+            'iva': Decimal('0.00'),
+            'coste_envio': Decimal('0.00'),
+            'total': Decimal('0.00'),
+            'cliente': None,
+        })
+    
+    # Verificar si el cliente existe, si no crear uno nuevo invitado
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        # Crear cliente invitado temporal si el anterior fue eliminado
+        cliente = Cliente.objects.create(
+            nombre='Invitado',
+            apellidos='',
+            email='',
+            telefono='',
+            direccion='',
+            ciudad='',
+            codigo_postal='',
+            password=''
+        )
+        request.session['cliente_id'] = cliente.id
+        request.session['es_invitado'] = True
+    
+    # Obtener o crear carrito para el cliente
+    carrito_obj, created = Carrito.objects.get_or_create(cliente=cliente)
+    
+    # Calcular totales
+    items = carrito_obj.items.all()
+    subtotal = Decimal('0.00')
+    
+    items_con_total = []
+    for item in items:
+        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
+        subtotal += total_item
+        items_con_total.append({
+            'item': item,
+            'precio_unitario': precio,
+            'total': total_item
+        })
+    
+    iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))  # 21% IVA
+    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')  # Envío gratis > 50€
+    total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+    
+    contexto = {
+        'items': items_con_total,
+        'subtotal': subtotal.quantize(Decimal('0.01')),
+        'iva': iva,
+        'coste_envio': coste_envio,
+        'total': total,
+        'cliente': cliente,
+    }
+    
+    return render(request, 'carrito.html', contexto)
+
+def agregar_al_carrito(request, producto_id):
+    """Agregar producto al carrito"""
+    cliente_id = request.session.get('cliente_id')
+    
+    # Si no hay cliente, crear uno de invitado temporal
+    if not cliente_id:
+        # Crear cliente invitado temporal
+        cliente_invitado = Cliente.objects.create(
+            nombre='Invitado',
+            apellidos='',
+            email='',
+            telefono='',
+            direccion='',
+            ciudad='',
+            codigo_postal='',
+            password=''
+        )
+        request.session['cliente_id'] = cliente_invitado.id
+        request.session['es_invitado'] = True
+        cliente_id = cliente_invitado.id
+    
+    # Verificar si el cliente existe, si no crear uno nuevo invitado
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        cliente = Cliente.objects.create(
+            nombre='Invitado',
+            apellidos='',
+            email='',
+            telefono='',
+            direccion='',
+            ciudad='',
+            codigo_postal='',
+            password=''
+        )
+        request.session['cliente_id'] = cliente.id
+        request.session['es_invitado'] = True
+    
+    producto = get_object_or_404(Producto, id=producto_id)
+    
+    # Obtener o crear carrito
+    carrito_obj, created = Carrito.objects.get_or_create(cliente=cliente)
+    
+    # Verificar si el producto ya está en el carrito
+    item_carrito, created = ItemCarrito.objects.get_or_create(
+        carrito=carrito_obj,
+        producto=producto,
+        defaults={'cantidad': 1}
+    )
+    
+    if not created:
+        # Si ya existe, verificar que no supere el stock
+        nueva_cantidad = item_carrito.cantidad + 1
+        if nueva_cantidad > producto.stock:
+            # Redirigir con mensaje de error (se puede mejorar con mensajes de Django)
+            return redirect('productos')
+        item_carrito.cantidad = nueva_cantidad
+        item_carrito.save()
+    else:
+        # Si es nuevo, verificar que haya stock disponible
+        if producto.stock < 1:
+            item_carrito.delete()
+            return redirect('productos')
+    
+    # Obtener la URL de referencia o redirigir a productos
+    referer = request.META.get('HTTP_REFERER')
+    if referer and 'productos' in referer:
+        return redirect('productos')
+    return redirect('productos')
+
+def comprar_ahora(request, producto_id):
+    """Agregar producto al carrito y redirigir al carrito para compra inmediata"""
+    cliente_id = request.session.get('cliente_id')
+    
+    # Si no hay cliente, crear uno de invitado temporal
+    if not cliente_id:
+        cliente_invitado = Cliente.objects.create(
+            nombre='Invitado',
+            apellidos='',
+            email='',
+            telefono='',
+            direccion='',
+            ciudad='',
+            codigo_postal='',
+            password=''
+        )
+        request.session['cliente_id'] = cliente_invitado.id
+        request.session['es_invitado'] = True
+        cliente_id = cliente_invitado.id
+    
+    # Verificar si el cliente existe, si no crear uno nuevo invitado
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        cliente = Cliente.objects.create(
+            nombre='Invitado',
+            apellidos='',
+            email='',
+            telefono='',
+            direccion='',
+            ciudad='',
+            codigo_postal='',
+            password=''
+        )
+        request.session['cliente_id'] = cliente.id
+        request.session['es_invitado'] = True
+    
+    producto = get_object_or_404(Producto, id=producto_id)
+    
+    # Obtener o crear carrito
+    carrito_obj, created = Carrito.objects.get_or_create(cliente=cliente)
+    
+    # Verificar si el producto ya está en el carrito
+    item_carrito, created = ItemCarrito.objects.get_or_create(
+        carrito=carrito_obj,
+        producto=producto,
+        defaults={'cantidad': 1}
+    )
+    
+    if not created:
+        # Si ya existe, verificar que no supere el stock
+        nueva_cantidad = item_carrito.cantidad + 1
+        if nueva_cantidad <= producto.stock:
+            item_carrito.cantidad = nueva_cantidad
+            item_carrito.save()
+    else:
+        # Si es nuevo, verificar que haya stock disponible
+        if producto.stock < 1:
+            item_carrito.delete()
+            return redirect('producto_detalle', producto_id=producto_id)
+    
+    # Siempre redirigir al carrito
+    return redirect('carrito')
+
+def actualizar_cantidad_carrito(request, item_id):
+    """Actualizar cantidad de un item del carrito"""
+    if request.method == 'POST':
+        cliente_id = request.session.get('cliente_id')
+        
+        if not cliente_id:
+            return redirect('carrito')
+        
+        item = get_object_or_404(ItemCarrito, id=item_id)
+        nueva_cantidad = int(request.POST.get('cantidad', 1))
+        
+        if nueva_cantidad > 0:
+            # Validar que no supere el stock disponible
+            if nueva_cantidad > item.producto.stock:
+                # Limitar a stock disponible
+                item.cantidad = item.producto.stock
+            else:
+                item.cantidad = nueva_cantidad
+            item.save()
+        else:
+            item.delete()
+    
+    return redirect('carrito')
+
+def eliminar_del_carrito(request, item_id):
+    """Eliminar item del carrito"""
+    cliente_id = request.session.get('cliente_id')
+    
+    if not cliente_id:
+        return redirect('carrito')
+    
+    item = get_object_or_404(ItemCarrito, id=item_id)
+    item.delete()
+    
+    return redirect('carrito')
+
+def checkout(request):
+    """Vista de checkout - Paso 1: Datos de envío"""
+    cliente_id = request.session.get('cliente_id')
+    
+    if not cliente_id:
+        return redirect('carrito')
+    
+    # Verificar si el cliente existe, si no crear uno nuevo invitado
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        cliente = Cliente.objects.create(
+            nombre='Invitado',
+            apellidos='',
+            email='',
+            telefono='',
+            direccion='',
+            ciudad='',
+            codigo_postal='',
+            password=''
+        )
+        request.session['cliente_id'] = cliente.id
+        request.session['es_invitado'] = True
+    
+    es_invitado = request.session.get('es_invitado', False)
+    
+    try:
+        carrito_obj = Carrito.objects.get(cliente=cliente)
+    except Carrito.DoesNotExist:
+        return redirect('carrito')
+    
+    items = carrito_obj.items.all()
+    
+    if not items:
+        return redirect('carrito')
+    
+    # Calcular totales
+    subtotal = Decimal('0.00')
+    items_con_total = []
+    
+    for item in items:
+        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
+        subtotal += total_item
+        items_con_total.append({
+            'item': item,
+            'precio_unitario': precio,
+            'total': total_item
+        })
+    
+    iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
+    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+    
+    contexto = {
+        'items': items_con_total,
+        'subtotal': subtotal.quantize(Decimal('0.01')),
+        'iva': iva,
+        'coste_envio': coste_envio,
+        'total': total,
+        'cliente': cliente,
+        'es_invitado': es_invitado,
+        'paso_actual': 1,
+    }
+    
+    return render(request, 'checkout.html', contexto)
+
+def checkout_paso2(request):
+    """Paso 2: Guardar datos de envío y mostrar métodos de pago"""
+    if request.method != 'POST':
+        return redirect('checkout')
+    
+    cliente_id = request.session.get('cliente_id')
+    if not cliente_id:
+        return redirect('carrito')
+    
+    # Verificar si el cliente existe, si no crear uno nuevo invitado
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        cliente = Cliente.objects.create(
+            nombre='Invitado',
+            apellidos='',
+            email='',
+            telefono='',
+            direccion='',
+            ciudad='',
+            codigo_postal='',
+            password=''
+        )
+        request.session['cliente_id'] = cliente.id
+        request.session['es_invitado'] = True
+    
+    es_invitado = request.session.get('es_invitado', False)
+    
+    # Si es invitado, validar que el email no exista ya en la base de datos
+    if es_invitado:
+        email_invitado = request.POST.get('email', '')
+        
+        # Verificar si ya existe un cliente con ese email (excluyendo el cliente temporal actual)
+        cliente_existente = Cliente.objects.filter(email=email_invitado).exclude(id=cliente_id).first()
+        
+        if cliente_existente:
+            # Si existe, mostrar error y redirigir al checkout
+            try:
+                carrito_obj = Carrito.objects.get(cliente=cliente)
+            except Carrito.DoesNotExist:
+                return redirect('carrito')
+            
+            items = carrito_obj.items.all()
+            
+            # Calcular totales para mostrar en el template
+            subtotal = Decimal('0.00')
+            items_con_total = []
+            
+            for item in items:
+                precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+                total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
+                subtotal += total_item
+                items_con_total.append({
+                    'item': item,
+                    'precio_unitario': precio,
+                    'total': total_item
+                })
+            
+            iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
+            coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+            total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+            
+            contexto = {
+                'items': items_con_total,
+                'subtotal': subtotal.quantize(Decimal('0.01')),
+                'iva': iva,
+                'coste_envio': coste_envio,
+                'total': total,
+                'cliente': cliente,
+                'es_invitado': es_invitado,
+                'paso_actual': 1,
+                'error_email': f'El email {email_invitado} ya está registrado. Por favor, <a href="/login/" style="color: #2196f3; text-decoration: underline; font-weight: 600;">inicia sesión</a> con tu cuenta o usa otro email.',
+            }
+            
+            return render(request, 'checkout.html', contexto)
+    
+    # Guardar datos de envío en sesión
+    # Para usuarios registrados, usar los datos del cliente si no vienen en el POST
+    request.session['datos_envio'] = {
+        'nombre': request.POST.get('nombre', '') or cliente.nombre,
+        'apellidos': request.POST.get('apellidos', '') or cliente.apellidos,
+        'email': request.POST.get('email', '') or cliente.email,
+        'direccion': request.POST.get('direccion', ''),
+        'ciudad': request.POST.get('ciudad', ''),
+        'codigo_postal': request.POST.get('codigo_postal', ''),
+        'telefono': request.POST.get('telefono', '') or cliente.telefono,
+        'tipo_entrega': request.POST.get('tipo_entrega', 'domicilio'),
+    }
+    
+    # Verificar si el cliente existe
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        return redirect('carrito')
+    
+    es_invitado = request.session.get('es_invitado', False)
+    
+    try:
+        carrito_obj = Carrito.objects.get(cliente=cliente)
+    except Carrito.DoesNotExist:
+        return redirect('carrito')
+    
+    items = carrito_obj.items.all()
+    
+    # Calcular totales
+    subtotal = Decimal('0.00')
+    items_con_total = []
+    
+    for item in items:
+        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
+        subtotal += total_item
+        items_con_total.append({
+            'item': item,
+            'precio_unitario': precio,
+            'total': total_item
+        })
+    
+    iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
+    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+    
+    # Generar token de cliente para Braintree Drop-in UI
+    try:
+        client_token = gateway.client_token.generate()
+    except Exception as e:
+        client_token = None
+        print(f"Error generando Braintree token: {e}")
+    
+    contexto = {
+        'items': items_con_total,
+        'subtotal': subtotal.quantize(Decimal('0.01')),
+        'iva': iva,
+        'coste_envio': coste_envio,
+        'total': total,
+        'cliente': cliente,
+        'es_invitado': es_invitado,
+        'paso_actual': 2,
+        'datos_envio': request.session.get('datos_envio', {}),
+        'braintree_client_token': client_token,
+    }
+    
+    return render(request, 'checkout_paso2.html', contexto)
+
+def checkout_paso3(request):
+    """Paso 3: Confirmar pedido antes de procesar pago"""
+    if request.method != 'POST':
+        return redirect('checkout')
+    
+    cliente_id = request.session.get('cliente_id')
+    if not cliente_id:
+        return redirect('carrito')
+    
+    # Guardar método de pago en sesión
+    request.session['metodo_pago'] = request.POST.get('metodo_pago', 'tarjeta')
+    
+    # Guardar payment_method_nonce si viene de Braintree
+    payment_nonce = request.POST.get('payment_method_nonce')
+    if payment_nonce:
+        request.session['payment_method_nonce'] = payment_nonce
+    
+    # Verificar si el cliente existe
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        return redirect('carrito')
+    
+    es_invitado = request.session.get('es_invitado', False)
+    
+    try:
+        carrito_obj = Carrito.objects.get(cliente=cliente)
+    except Carrito.DoesNotExist:
+        return redirect('carrito')
+    
+    items = carrito_obj.items.all()
+    
+    # Calcular totales
+    subtotal = Decimal('0.00')
+    items_con_total = []
+    
+    for item in items:
+        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
+        subtotal += total_item
+        items_con_total.append({
+            'item': item,
+            'precio_unitario': precio,
+            'total': total_item
+        })
+    
+    iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
+    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+    
+    contexto = {
+        'items': items_con_total,
+        'subtotal': subtotal.quantize(Decimal('0.01')),
+        'iva': iva,
+        'coste_envio': coste_envio,
+        'total': total,
+        'cliente': cliente,
+        'es_invitado': es_invitado,
+        'paso_actual': 3,
+        'datos_envio': request.session.get('datos_envio', {}),
+        'metodo_pago': request.session.get('metodo_pago', 'tarjeta'),
+    }
+    
+    return render(request, 'checkout_paso3.html', contexto)
+
+def procesar_pago(request):
+    """Procesar el pago con Braintree o contra reembolso"""
+    if request.method != 'POST':
+        return redirect('checkout')
+    
+    cliente_id = request.session.get('cliente_id')
+    
+    if not cliente_id:
+        return redirect('login')
+    
+    # Verificar si el cliente existe
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        return redirect('carrito')
+    
+    carrito_obj = get_object_or_404(Carrito, cliente=cliente)
+    
+    items = carrito_obj.items.all()
+    
+    if not items:
+        return redirect('carrito')
+    
+    # Calcular totales
+    subtotal = Decimal('0.00')
+    for item in items:
+        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        subtotal += (precio * item.cantidad).quantize(Decimal('0.01'))
+    
+    subtotal = subtotal.quantize(Decimal('0.01'))
+    iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
+    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    descuento = Decimal('0.00')
+    total = (subtotal + iva + coste_envio - descuento).quantize(Decimal('0.01'))
+    
+    # Obtener método de pago
+    metodo_pago = request.session.get('metodo_pago', 'tarjeta')
+    
+    # Procesar según método de pago
+    if metodo_pago == 'reembolso':
+        # Contra reembolso: no procesar pago, solo crear pedido
+        resultado_pago = {
+            'success': True,
+            'transaction_id': None,
+            'estado': 'pending_cash_on_delivery'
+        }
+    else:
+        # Pago con tarjeta: procesar con Braintree
+        payment_method_nonce = request.session.get('payment_method_nonce')
+        
+        if not payment_method_nonce:
+            request.session['error_pago'] = 'No se recibió el método de pago. Por favor, intenta nuevamente.'
+            return redirect('checkout_paso3')
+        
+        # Procesar transacción con Braintree
+        try:
+            result = gateway.transaction.sale({
+                'amount': str(total),
+                'payment_method_nonce': payment_method_nonce,
+                'options': {
+                    'submit_for_settlement': True
+                }
+            })
+            
+            if result.is_success:
+                resultado_pago = {
+                    'success': True,
+                    'transaction_id': result.transaction.id,
+                    'estado': result.transaction.status
+                }
+            else:
+                # Error en el pago
+                request.session['error_pago'] = result.message
+                return redirect('checkout_paso3')
+        except Exception as e:
+            request.session['error_pago'] = f"Error procesando pago: {str(e)}"
+            return redirect('checkout_paso3')
+    
+    # Obtener datos de la sesión
+    datos_envio = request.session.get('datos_envio', {})
+    tipo_entrega = datos_envio.get('tipo_entrega', 'domicilio')
+    metodo_pago = 'tarjeta'  # Solo aceptamos pago con tarjeta vía Braintree
+    
+    # Si es invitado, actualizar sus datos con los de la sesión
+    es_invitado = request.session.get('es_invitado', False)
+    if es_invitado and datos_envio:
+        cliente.nombre = datos_envio.get('nombre', 'Invitado')
+        cliente.apellidos = datos_envio.get('apellidos', '')
+        cliente.email = datos_envio.get('email', '')
+        cliente.telefono = datos_envio.get('telefono', '')
+        cliente.direccion = datos_envio.get('direccion', '')
+        cliente.ciudad = datos_envio.get('ciudad', '')
+        cliente.codigo_postal = datos_envio.get('codigo_postal', '')
+        cliente.save()
+        direccion_envio = f"{cliente.direccion}, {cliente.ciudad}, {cliente.codigo_postal}"
+        telefono = cliente.telefono
+    else:
+        direccion_envio = f"{cliente.direccion}, {cliente.ciudad}, {cliente.codigo_postal}"
+        telefono = cliente.telefono
+    
+    # Crear el pedido
+    numero_pedido = f"PED-{uuid.uuid4().hex[:8].upper()}"
+    token_confirmacion = uuid.uuid4().hex
+    
+    pedido = Pedido.objects.create(
+        cliente=cliente,
+        numero_pedido=numero_pedido,
+        token_confirmacion=token_confirmacion,
+        subtotal=subtotal,
+        impuestos=iva,
+        coste_entrega=coste_envio,
+        descuento=descuento,
+        total=total,
+        metodo_pago=metodo_pago,
+        tipo_entrega=tipo_entrega,
+        direccion_envio=direccion_envio,
+        telefono=telefono,
+        estado='pendiente'
+    )
+    
+    # Crear items del pedido (NO reducir stock hasta que se confirme)
+    for item in items:
+        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
+        
+        ItemPedido.objects.create(
+            pedido=pedido,
+            producto=item.producto,
+            cantidad=item.cantidad,
+            precio_unitario=precio,
+            total=total_item
+        )
+    
+    # Vaciar el carrito
+    items.delete()
+    
+    # Enviar email de confirmación con enlace para confirmar pedido
+    enviar_email_confirmacion_pedido(pedido, request)
+    
+    # Limpiar datos de sesión
+    if 'datos_envio' in request.session:
+        del request.session['datos_envio']
+    if 'metodo_pago' in request.session:
+        del request.session['metodo_pago']
+    if 'payment_method_nonce' in request.session:
+        del request.session['payment_method_nonce']
+    
+    # Redirigir a página de confirmación con el ID del pedido
+    return redirect('confirmacion_pedido', pedido_id=pedido.id)
+
+def confirmacion_pedido(request, pedido_id):
+    """Vista de confirmación del pedido"""
+    cliente_id = request.session.get('cliente_id')
+    
+    # Intentar obtener el pedido sin restricción de cliente para invitados
+    try:
+        if cliente_id:
+            pedido = get_object_or_404(Pedido, id=pedido_id, cliente_id=cliente_id)
+        else:
+            # Permitir ver el pedido si acaba de ser creado en esta sesión
+            pedido = get_object_or_404(Pedido, id=pedido_id)
+    except:
+        return redirect('mainPage')
+    
+    items = pedido.items.all()
+    
+    # Verificar si fue invitado antes de limpiar la sesión
+    fue_invitado = request.session.get('es_invitado', False)
+    
+    contexto = {
+        'pedido': pedido,
+        'items': items,
+        'fue_invitado': fue_invitado,
+    }
+    
+    return render(request, 'confirmacion_pedido.html', contexto)
+
+def historial_pedidos(request):
+    """Vista del historial de pedidos del cliente"""
+    cliente_id = request.session.get('cliente_id')
+    
+    if not cliente_id:
+        return redirect('mainPage')
+    
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        request.session.flush()
+        return redirect('mainPage')
+    
+    # Verificar si es invitado (sin contraseña)
+    es_invitado = request.session.get('es_invitado', False) or not cliente.password or cliente.password == ''
+    
+    # Obtener todos los pedidos del cliente ordenados por fecha (más reciente primero)
+    pedidos = Pedido.objects.filter(cliente=cliente).order_by('-fecha_creacion')
+    
+    # Preparar datos de los pedidos con sus items
+    pedidos_con_items = []
+    for pedido in pedidos:
+        items = pedido.items.all()
+        pedidos_con_items.append({
+            'pedido': pedido,
+            'items': items,
+            'cantidad_items': sum(item.cantidad for item in items)
+        })
+    
+    contexto = {
+        'cliente': cliente,
+        'pedidos_con_items': pedidos_con_items,
+        'es_invitado': es_invitado,
+    }
+    
+    return render(request, 'historial_pedidos.html', contexto)
+
+def establecer_password(request):
+    """Vista para que invitados establezcan contraseña"""
+    cliente_id = request.session.get('cliente_id')
+    
+    if not cliente_id:
+        return redirect('login')
+    
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    
+    # Verificar si ya tiene contraseña
+    if cliente.password and cliente.password != '':
+        return redirect('perfil')
+    
+    # Verificar que tenga todos los campos obligatorios
+    campos_vacios = []
+    if not cliente.nombre:
+        campos_vacios.append('Nombre')
+    if not cliente.apellidos:
+        campos_vacios.append('Apellidos')
+    if not cliente.email:
+        campos_vacios.append('Email')
+    if not cliente.telefono:
+        campos_vacios.append('Teléfono')
+    if not cliente.direccion:
+        campos_vacios.append('Dirección')
+    if not cliente.ciudad:
+        campos_vacios.append('Ciudad')
+    if not cliente.codigo_postal:
+        campos_vacios.append('Código Postal')
+    
+    if campos_vacios:
+        contexto = {
+            'cliente': cliente,
+            'error': f'Debes completar todos los campos obligatorios en tu perfil antes de establecer una contraseña. Campos faltantes: {", ".join(campos_vacios)}',
+        }
+        return render(request, 'establecer_password.html', contexto)
+    
+    if request.method == 'POST':
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        
+        if not password or len(password) < 6:
+            contexto = {
+                'cliente': cliente,
+                'error': 'La contraseña debe tener al menos 6 caracteres'
+            }
+            return render(request, 'establecer_password.html', contexto)
+        
+        if password != password_confirm:
+            contexto = {
+                'cliente': cliente,
+                'error': 'Las contraseñas no coinciden'
+            }
+            return render(request, 'establecer_password.html', contexto)
+        
+        # Establecer contraseña
+        cliente.password = password
+        cliente.save()
+        
+        # Limpiar flag de invitado
+        if 'es_invitado' in request.session:
+            del request.session['es_invitado']
+        
+        # Redirigir al perfil con mensaje de éxito
+        request.session['password_establecida'] = True
+        return redirect('perfil')
+    
+    contexto = {
+        'cliente': cliente,
+    }
+    
+    return render(request, 'establecer_password.html', contexto)
+
+def enviar_email_confirmacion(pedido):
+    """Enviar email de confirmación del pedido al cliente"""
+    try:
+        asunto = f'Confirmación de Pedido #{pedido.numero_pedido} - Todo Jardin'
+        
+        # Obtener items del pedido
+        items = pedido.items.all()
+        
+        # Preparar contexto para el email
+        contexto = {
+            'pedido': pedido,
+            'items': items,
+            'cliente': pedido.cliente,
+        }
+        
+        # Crear mensaje HTML y texto plano
+        mensaje_html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #4a7c2c;">¡Gracias por tu compra en Todo Jardin!</h2>
+                
+                <p>Hola {pedido.cliente.nombre},</p>
+                
+                <p>Hemos recibido tu pedido correctamente. A continuación encontrarás los detalles:</p>
+                
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <h3 style="color: #4a7c2c; margin-top: 0;">Pedido #{pedido.numero_pedido}</h3>
+                    <p><strong>Fecha:</strong> {pedido.fecha_creacion.strftime('%d/%m/%Y %H:%M')}</p>
+                    <p><strong>Estado:</strong> {pedido.get_estado_display()}</p>
+                    <p><strong>Método de pago:</strong> {pedido.get_metodo_pago_display()}</p>
+                </div>
+                
+                <h3 style="color: #4a7c2c;">Productos:</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: #f5f5f5;">
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #4a7c2c;">Producto</th>
+                            <th style="padding: 10px; text-align: center; border-bottom: 2px solid #4a7c2c;">Cantidad</th>
+                            <th style="padding: 10px; text-align: right; border-bottom: 2px solid #4a7c2c;">Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+        
+        for item in items:
+            mensaje_html += f"""
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{item.producto.nombre}</td>
+                            <td style="padding: 10px; text-align: center; border-bottom: 1px solid #ddd;">{item.cantidad}</td>
+                            <td style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">€{item.total}</td>
+                        </tr>
+            """
+        
+        mensaje_html += f"""
+                    </tbody>
+                </table>
+                
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+                    <p style="margin: 5px 0;"><strong>Subtotal:</strong> €{pedido.subtotal}</p>
+                    <p style="margin: 5px 0;"><strong>IVA (21%):</strong> €{pedido.impuestos}</p>
+                    <p style="margin: 5px 0;"><strong>Envío:</strong> {"GRATIS" if pedido.coste_entrega == 0 else f"€{pedido.coste_entrega}"}</p>
+                    <h3 style="color: #4a7c2c; margin: 10px 0;"><strong>Total:</strong> €{pedido.total}</h3>
+                </div>
+                
+                <h3 style="color: #4a7c2c;">Dirección de envío:</h3>
+                <p>{pedido.direccion_envio}<br>
+                Teléfono: {pedido.telefono}</p>
+                
+                <p style="margin-top: 30px;">Si tienes alguna pregunta sobre tu pedido, no dudes en contactarnos.</p>
+                
+                <p style="color: #666; font-size: 0.9em; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+                    Este es un mensaje automático, por favor no respondas a este correo.<br>
+                    © 2025 Todo Jardin - Todos los derechos reservados
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        mensaje_texto = f"""
+        ¡Gracias por tu compra en Todo Jardin!
+        
+        Hola {pedido.cliente.nombre},
+        
+        Hemos recibido tu pedido correctamente.
+        
+        Pedido #{pedido.numero_pedido}
+        Fecha: {pedido.fecha_creacion.strftime('%d/%m/%Y %H:%M')}
+        Estado: {pedido.get_estado_display()}
+        
+        Productos:
+        """
+        
+        for item in items:
+            mensaje_texto += f"\n- {item.producto.nombre} x{item.cantidad} - €{item.total}"
+        
+        mensaje_texto += f"""
+        
+        Subtotal: €{pedido.subtotal}
+        IVA (21%): €{pedido.impuestos}
+        Envío: {"GRATIS" if pedido.coste_entrega == 0 else f"€{pedido.coste_entrega}"}
+        Total: €{pedido.total}
+        
+        Dirección de envío:
+        {pedido.direccion_envio}
+        Teléfono: {pedido.telefono}
+        
+        Si tienes alguna pregunta, no dudes en contactarnos.
+        
+        © 2025 Todo Jardin
+        """
+        
+        # Enviar email
+        send_mail(
+            subject=asunto,
+            message=mensaje_texto,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[pedido.cliente.email],
+            html_message=mensaje_html,
+            fail_silently=False,
+        )
+        
+        return True
+    except Exception as e:
+        print(f"Error al enviar email: {str(e)}")
+        return False
+
+def enviar_email_confirmacion_pedido(pedido, request):
+    """Enviar email con enlace de confirmación del pedido"""
+    try:
+        from django.core.mail import EmailMultiAlternatives
+        from email.mime.text import MIMEText
+        from email.header import Header
+        
+        # Generar URL de confirmación con token
+        dominio = request.get_host()
+        protocolo = 'https' if request.is_secure() else 'http'
+        url_confirmacion = f"{protocolo}://{dominio}/confirmar-pedido/{pedido.id}/?token={pedido.token_confirmacion}"
+        
+        asunto = f'Confirma tu Pedido #{pedido.numero_pedido} - Todo Jardin'
+        
+        # Obtener items del pedido
+        items = pedido.items.all()
+        
+        # Crear mensaje HTML
+        mensaje_html = f"""
+        <html>
+        <head>
+            <meta charset="utf-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #4a7c2c;">¡Gracias por tu compra en Todo Jardin!</h2>
+                
+                <p>Hola {pedido.cliente.nombre},</p>
+                
+                <p>Hemos recibido tu pedido. <strong>Para completar tu compra y actualizar el inventario, necesitamos que confirmes tu pedido haciendo clic en el botón de abajo:</strong></p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{url_confirmacion}" style="background: linear-gradient(135deg, #4a7c2c 0%, #6ba83e 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 1.1rem; display: inline-block;">
+                        Confirmar Pedido
+                    </a>
+                </div>
+                
+                <p style="color: #666; font-size: 0.9rem;">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+                <p style="background-color: #f5f5f5; padding: 10px; border-radius: 5px; word-break: break-all; font-size: 0.85rem;">
+                    {url_confirmacion}
+                </p>
+                
+                <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p style="margin: 0; color: #856404;"><strong>⚠️ Importante:</strong> Tu pedido permanecerá en estado "Pendiente" hasta que lo confirmes. El stock no se actualizará hasta entonces.</p>
+                </div>
+                
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <h3 style="color: #4a7c2c; margin-top: 0;">Resumen del Pedido #{pedido.numero_pedido}</h3>
+                    <p><strong>Fecha:</strong> {pedido.fecha_creacion.strftime('%d/%m/%Y %H:%M')}</p>
+                    <p><strong>Estado:</strong> Pendiente de Confirmación</p>
+                </div>
+                
+                <h3 style="color: #4a7c2c;">Productos:</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: #f5f5f5;">
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #4a7c2c;">Producto</th>
+                            <th style="padding: 10px; text-align: center; border-bottom: 2px solid #4a7c2c;">Cantidad</th>
+                            <th style="padding: 10px; text-align: right; border-bottom: 2px solid #4a7c2c;">Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+        
+        for item in items:
+            mensaje_html += f"""
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{item.producto.nombre}</td>
+                            <td style="padding: 10px; text-align: center; border-bottom: 1px solid #ddd;">{item.cantidad}</td>
+                            <td style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">€{item.total}</td>
+                        </tr>
+            """
+        
+        mensaje_html += f"""
+                    </tbody>
+                </table>
+                
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+                    <p style="margin: 5px 0;"><strong>Subtotal:</strong> €{pedido.subtotal}</p>
+                    <p style="margin: 5px 0;"><strong>IVA (21%):</strong> €{pedido.impuestos}</p>
+                    <p style="margin: 5px 0;"><strong>Envío:</strong> {"GRATIS" if pedido.coste_entrega == 0 else f"€{pedido.coste_entrega}"}</p>
+                    <h3 style="color: #4a7c2c; margin: 10px 0;"><strong>Total:</strong> €{pedido.total}</h3>
+                </div>
+                
+                <h3 style="color: #4a7c2c;">Dirección de envío:</h3>
+                <p>{pedido.direccion_envio}<br>
+                Teléfono: {pedido.telefono}</p>
+                
+                <p style="color: #666; font-size: 0.9em; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+                    Este es un mensaje automático, por favor no respondas a este correo.<br>
+                    © 2025 Todo Jardin - Todos los derechos reservados
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        mensaje_texto = f"""
+        ¡Gracias por tu compra en Todo Jardin!
+        
+        Hola {pedido.cliente.nombre},
+        
+        Hemos recibido tu pedido. Para completar tu compra, necesitamos que confirmes tu pedido.
+        
+        CONFIRMA TU PEDIDO AQUÍ:
+        {url_confirmacion}
+        
+        ⚠️ IMPORTANTE: Tu pedido permanecerá en estado "Pendiente" hasta que lo confirmes.
+        
+        Pedido #{pedido.numero_pedido}
+        Fecha: {pedido.fecha_creacion.strftime('%d/%m/%Y %H:%M')}
+        Estado: Pendiente de Confirmación
+        
+        Productos:
+        """
+        
+        for item in items:
+            mensaje_texto += f"\n- {item.producto.nombre} x{item.cantidad} - €{item.total}"
+        
+        mensaje_texto += f"""
+        
+        Subtotal: €{pedido.subtotal}
+        IVA (21%): €{pedido.impuestos}
+        Envío: {"GRATIS" if pedido.coste_entrega == 0 else f"€{pedido.coste_entrega}"}
+        Total: €{pedido.total}
+        
+        Dirección de envío:
+        {pedido.direccion_envio}
+        Teléfono: {pedido.telefono}
+        
+        © 2025 Todo Jardin
+        """
+        
+        # Enviar email con codificación UTF-8 explícita
+        email = EmailMultiAlternatives(
+            subject=asunto,
+            body=mensaje_texto,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[pedido.cliente.email]
+        )
+        email.attach_alternative(mensaje_html, "text/html")
+        email.encoding = 'utf-8'
+        
+        # Forzar UTF-8 en headers
+        email.extra_headers = {
+            'Content-Type': 'text/html; charset=utf-8',
+        }
+        
+        email.send(fail_silently=False)
+        
+        return True
+    except Exception as e:
+        print(f"Error al enviar email de confirmación: {str(e)}")
+        return False
+
+def enviar_email_pedido_confirmado(pedido):
+    """Enviar email notificando que el pedido fue confirmado exitosamente"""
+    try:
+        from django.core.mail import EmailMultiAlternatives
+        
+        asunto = f'Pedido Confirmado #{pedido.numero_pedido} - Todo Jardin'
+        
+        # Obtener items del pedido
+        items = pedido.items.all()
+        
+        # Crear mensaje HTML
+        mensaje_html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="display: inline-block; width: 80px; height: 80px; background: linear-gradient(135deg, #4a7c2c 0%, #6ba83e 100%); border-radius: 50%; padding: 20px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                
+                <h2 style="color: #4a7c2c; text-align: center;">¡Tu Pedido Ha Sido Confirmado!</h2>
+                
+                <p>Hola {pedido.cliente.nombre},</p>
+                
+                <p>Tu pedido <strong>#{pedido.numero_pedido}</strong> ha sido confirmado exitosamente. Ahora procederemos a prepararlo para su envío.</p>
+                
+                <div style="background-color: #e8f5e9; border-left: 4px solid #4a7c2c; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p style="margin: 0; color: #2d5016;"><strong>✓ Confirmado</strong> - Tu pedido está siendo procesado</p>
+                </div>
+                
+                <h3 style="color: #4a7c2c;">Resumen del Pedido:</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: #f5f5f5;">
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #4a7c2c;">Producto</th>
+                            <th style="padding: 10px; text-align: center; border-bottom: 2px solid #4a7c2c;">Cantidad</th>
+                            <th style="padding: 10px; text-align: right; border-bottom: 2px solid #4a7c2c;">Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+        
+        for item in items:
+            mensaje_html += f"""
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{item.producto.nombre}</td>
+                            <td style="padding: 10px; text-align: center; border-bottom: 1px solid #ddd;">{item.cantidad}</td>
+                            <td style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">€{item.total}</td>
+                        </tr>
+            """
+        
+        mensaje_html += f"""
+                    </tbody>
+                </table>
+                
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+                    <h3 style="color: #4a7c2c; margin: 10px 0;"><strong>Total Pagado:</strong> €{pedido.total}</h3>
+                </div>
+                
+                <h3 style="color: #4a7c2c;">Dirección de envío:</h3>
+                <p>{pedido.direccion_envio}<br>
+                Teléfono: {pedido.telefono}</p>
+                
+                <p>Te mantendremos informado sobre el estado de tu pedido.</p>
+                
+                <p style="color: #666; font-size: 0.9em; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+                    © 2025 Todo Jardin - Todos los derechos reservados
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        mensaje_texto = f"""
+        ¡Tu Pedido Ha Sido Confirmado!
+        
+        Hola {pedido.cliente.nombre},
+        
+        Tu pedido #{pedido.numero_pedido} ha sido confirmado exitosamente.
+        
+        ✓ Confirmado - Tu pedido está siendo procesado
+        
+        Total Pagado: €{pedido.total}
+        
+        Dirección de envío:
+        {pedido.direccion_envio}
+        Teléfono: {pedido.telefono}
+        
+        Te mantendremos informado sobre el estado de tu pedido.
+        
+        © 2025 Todo Jardin
+        """
+        
+        # Enviar email con codificación UTF-8 explícita
+        email = EmailMultiAlternatives(
+            subject=asunto,
+            body=mensaje_texto,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[pedido.cliente.email]
+        )
+        email.attach_alternative(mensaje_html, "text/html")
+        email.encoding = 'utf-8'
+        
+        # Forzar UTF-8 en headers
+        email.extra_headers = {
+            'Content-Type': 'text/html; charset=utf-8',
+        }
+        
+        email.send(fail_silently=False)
+        
+        return True
+    except Exception as e:
+        print(f"Error al enviar email de pedido confirmado: {str(e)}")
+        return False
+
+def confirmar_pedido(request, pedido_id):
+    """Confirmar pedido mediante token de email y actualizar stock"""
+    # Obtener token de la URL
+    token = request.GET.get('token')
+    
+    if not token:
+        # Si no hay token, verificar si está autenticado
+        cliente_id = request.session.get('cliente_id')
+        
+        if not cliente_id:
+            return redirect('login')
+        
+        pedido = get_object_or_404(Pedido, id=pedido_id, cliente_id=cliente_id)
+    else:
+        # Si hay token, validar sin requerir autenticación
+        pedido = get_object_or_404(Pedido, id=pedido_id, token_confirmacion=token)
+    
+    # Verificar que el pedido esté en estado pendiente
+    if pedido.estado != 'pendiente':
+        # Si ya está confirmado, redirigir al historial o confirmación
+        return redirect('confirmacion_pedido', pedido_id=pedido.id)
+    
+    # Verificar stock disponible para todos los items
+    items = pedido.items.all()
+    stock_insuficiente = []
+    
+    for item in items:
+        if item.producto.stock < item.cantidad:
+            stock_insuficiente.append(f"{item.producto.nombre} (disponible: {item.producto.stock}, solicitado: {item.cantidad})")
+    
+    if stock_insuficiente:
+        # Si hay stock insuficiente, mostrar error
+        contexto = {
+            'pedido': pedido,
+            'items': items,
+            'error': f"Stock insuficiente para: {', '.join(stock_insuficiente)}",
+            'fue_invitado': False,
+        }
+        return render(request, 'confirmacion_pedido.html', contexto)
+    
+    # Actualizar stock de cada producto
+    for item in items:
+        producto = item.producto
+        producto.stock -= item.cantidad
+        
+        # Mantener el stock en 0 como mínimo
+        if producto.stock < 0:
+            producto.stock = 0
+        
+        producto.save()
+    
+    # Cambiar estado del pedido a confirmado
+    pedido.estado = 'confirmado'
+    pedido.save()
+    
+    # Enviar email de confirmación exitosa
+    enviar_email_pedido_confirmado(pedido)
+    
+    # Autenticar al cliente si vino desde el email
+    if token and not request.session.get('cliente_id'):
+        request.session['cliente_id'] = pedido.cliente.id
+        request.session['pedido_confirmado_email'] = True
+    
+    # Redirigir a confirmación con mensaje de éxito
+    request.session['pedido_confirmado'] = True
+    return redirect('confirmacion_pedido', pedido_id=pedido.id)
+
+def buscar_pedido(request):
+    """Vista para buscar pedidos por número sin estar registrado"""
+    pedido_encontrado = None
+    error = None
+    
+    if request.method == 'POST':
+        numero_pedido = request.POST.get('numero_pedido', '').strip().upper()
+        
+        if not numero_pedido:
+            error = 'Por favor, ingresa un número de pedido'
+        else:
+            # Eliminar el prefijo #PED- o PED- si existe
+            if numero_pedido.startswith('#'):
+                numero_pedido = numero_pedido[1:]
+            if not numero_pedido.startswith('PED-'):
+                numero_pedido = f'PED-{numero_pedido}'
+            
+            try:
+                pedido = Pedido.objects.get(numero_pedido=numero_pedido)
+                items = pedido.items.all()
+                pedido_encontrado = {
+                    'pedido': pedido,
+                    'items': items,
+                    'cantidad_items': sum(item.cantidad for item in items)
+                }
+            except Pedido.DoesNotExist:
+                error = f'No se encontró ningún pedido con el número {numero_pedido}'
+    
+    contexto = {
+        'pedido_encontrado': pedido_encontrado,
+        'error': error,
+    }
+    
+    return render(request, 'buscar_pedido.html', contexto)
+
+
+# Import admin views
+from .views_admin import (
+    admin_panel, admin_pedidos, admin_actualizar_estado_pedido, admin_eliminar_pedido,
+    admin_productos, admin_crear_producto, admin_editar_producto,
+    admin_usuarios, admin_toggle_admin, admin_eliminar_usuario
+)

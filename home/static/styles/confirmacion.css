@@ -1,0 +1,399 @@
+.confirmacion-container {
+    max-width: 900px;
+    margin: 100px auto 50px;
+    padding: 0 2rem;
+    min-height: calc(100vh - 150px);
+}
+
+.confirmacion-card {
+    background: white;
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.icono-exito {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, #4a7c2c 0%, #6ba83e 100%);
+    border-radius: 50%;
+    margin-bottom: 2rem;
+}
+
+.icono-exito svg {
+    color: white;
+}
+
+.confirmacion-card h1 {
+    color: #2d5016;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.mensaje-exito {
+    color: #666;
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+/* Banner de invitado para establecer contraseña */
+.invitado-password-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left: 4px solid #2196f3;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.invitado-password-banner svg {
+    color: #2196f3;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.invitado-password-banner strong {
+    color: #1976d2;
+    font-size: 1.1rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.invitado-password-banner p {
+    color: #0d47a1;
+    font-size: 0.95rem;
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
+}
+
+.btn-establecer-password {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    background: #2196f3;
+    color: white;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-establecer-password:hover {
+    background: #1976d2;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+}
+
+/* Banner de contra reembolso */
+.reembolso-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: linear-gradient(135deg, #fff4e6 0%, #ffe0b2 100%);
+    border-left: 4px solid #f39c12;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.reembolso-banner svg {
+    color: #f39c12;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.reembolso-banner strong {
+    color: #e67e22;
+    font-size: 1.1rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.reembolso-banner p {
+    color: #d35400;
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.pedido-info {
+    background: linear-gradient(135deg, rgba(74, 124, 44, 0.05) 0%, rgba(107, 168, 62, 0.05) 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.info-label {
+    color: #666;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-valor {
+    color: #2d5016;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.pedido-numero {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #4a7c2c;
+}
+
+.badge-estado {
+    display: inline-block;
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.detalles-pedido {
+    text-align: left;
+    margin-bottom: 2rem;
+}
+
+.detalles-pedido h2 {
+    color: #2d5016;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.productos-pedido {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.producto-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.producto-item:last-child {
+    border-bottom: none;
+}
+
+.producto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.producto-nombre {
+    color: #2d5016;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.producto-cantidad {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.producto-precio {
+    color: #4a7c2c;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.totales-pedido {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 15px;
+    padding: 1.5rem;
+}
+
+.total-linea {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+    color: #666;
+    font-size: 1rem;
+}
+
+.total-linea.descuento {
+    color: #e74c3c;
+}
+
+.total-linea.total-final {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d5016;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid #4a7c2c;
+}
+
+.envio-info {
+    background: linear-gradient(135deg, rgba(74, 124, 44, 0.05) 0%, rgba(107, 168, 62, 0.05) 100%);
+    border-left: 4px solid #4a7c2c;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.envio-info h3 {
+    color: #2d5016;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+}
+
+.envio-info p {
+    color: #666;
+    margin: 0.5rem 0;
+    font-size: 1rem;
+}
+
+.nota-info {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nota-info svg {
+    color: #2196f3;
+    flex-shrink: 0;
+}
+
+.nota-info p {
+    color: #1565c0;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.acciones {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-inicio,
+.btn-productos {
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.btn-inicio {
+    background: linear-gradient(135deg, #4a7c2c 0%, #6ba83e 100%);
+    color: white;
+}
+
+.btn-inicio:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(45, 80, 22, 0.4);
+}
+
+.btn-productos {
+    background: white;
+    color: #4a7c2c;
+    border: 2px solid #4a7c2c;
+}
+
+.btn-productos:hover {
+    background: #f0f8f0;
+}
+
+/* Alerta de confirmación de pedido */
+.alerta-confirmacion {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+    border-left: 4px solid #ffc107;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 2rem 0;
+    text-align: left;
+}
+
+.alerta-confirmacion p {
+    color: #856404;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.btn-confirmar-pedido {
+    width: 100%;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-confirmar-pedido:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.5);
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+}
+
+@media (max-width: 768px) {
+    .confirmacion-container {
+        padding: 0 1rem;
+        margin-top: 80px;
+    }
+    
+    .confirmacion-card {
+        padding: 2rem 1.5rem;
+    }
+    
+    .confirmacion-card h1 {
+        font-size: 2rem;
+    }
+    
+    .pedido-info {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .acciones {
+        flex-direction: column;
+    }
+    
+    .btn-inicio,
+    .btn-productos {
+        width: 100%;
+        text-align: center;
+    }
+}

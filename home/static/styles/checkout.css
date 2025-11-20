@@ -1,0 +1,862 @@
+.checkout-container {
+    max-width: 1400px;
+    margin: 100px auto 50px;
+    padding: 0 2rem;
+    min-height: calc(100vh - 150px);
+}
+
+.checkout-container h1 {
+    color: #2d5016;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+/* Indicador de pasos */
+.checkout-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2.5rem;
+    padding: 1.5rem 0;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.step-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    color: #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.step.active .step-number {
+    background: linear-gradient(135deg, #4a7c2c 0%, #6ba83e 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(74, 124, 44, 0.4);
+}
+
+.step.completed .step-number {
+    background: linear-gradient(135deg, #2d5016 0%, #4a7c2c 100%);
+    color: white;
+}
+
+.step-label {
+    color: #999;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.step.active .step-label {
+    color: #2d5016;
+}
+
+.step.completed .step-label {
+    color: #4a7c2c;
+}
+
+.step-line {
+    width: 80px;
+    height: 3px;
+    background: #e0e0e0;
+    margin: 0 1rem;
+    margin-bottom: 1.8rem;
+    transition: all 0.3s ease;
+}
+
+.step-line.completed {
+    background: linear-gradient(90deg, #4a7c2c 0%, #6ba83e 100%);
+}
+
+.step.completed + .step-line {
+    background: linear-gradient(90deg, #4a7c2c 0%, #6ba83e 100%);
+}
+
+.checkout-content {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+}
+
+/* Banner de invitado */
+.invitado-banner {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #fff4e6 0%, #ffe0b2 100%);
+    border-left: 4px solid #f39c12;
+    padding: 1.2rem 1.5rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.invitado-banner svg {
+    color: #f39c12;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.invitado-banner strong {
+    color: #e67e22;
+    font-size: 1.1rem;
+    display: block;
+    margin-bottom: 0.3rem;
+}
+
+.invitado-banner p {
+    color: #856404;
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.invitado-banner a {
+    color: #4a7c2c;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.invitado-banner a:hover {
+    color: #2d5016;
+}
+
+/* Banner de error de email */
+.error-banner {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+    border-left: 4px solid #dc3545;
+    padding: 1.2rem 1.5rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.error-banner svg {
+    color: #dc3545;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.error-banner strong {
+    color: #c82333;
+    font-size: 1.1rem;
+    display: block;
+    margin-bottom: 0.3rem;
+}
+
+.error-banner p {
+    color: #721c24;
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.error-banner a {
+    color: #2196f3;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.error-banner a:hover {
+    color: #1976d2;
+}
+
+.checkout-form {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.form-section h2 {
+    color: #2d5016;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    color: #2d5016;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #4a7c2c;
+    box-shadow: 0 0 0 3px rgba(74, 124, 44, 0.1);
+}
+
+.metodos-pago {
+    display: grid;
+    gap: 1rem;
+}
+
+.metodo-pago {
+    cursor: pointer;
+}
+
+.metodo-pago input[type="radio"] {
+    display: none;
+}
+
+.metodo-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.2rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.metodo-pago input[type="radio"]:checked + .metodo-card {
+    border-color: #4a7c2c;
+    background: linear-gradient(135deg, rgba(74, 124, 44, 0.05) 0%, rgba(107, 168, 62, 0.05) 100%);
+}
+
+.metodo-card svg {
+    color: #4a7c2c;
+}
+
+.metodo-card span {
+    font-weight: 600;
+    color: #2d5016;
+}
+
+.tarjeta-simulada {
+    background: linear-gradient(135deg, #fff4e6 0%, #ffe0b2 100%);
+    border-left: 4px solid #f39c12;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+/* Campos de tarjeta */
+.tarjeta-campos {
+    display: grid;
+    gap: 1.2rem;
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(74, 124, 44, 0.03) 0%, rgba(107, 168, 62, 0.03) 100%);
+    border-radius: 12px;
+    border: 2px solid rgba(74, 124, 44, 0.1);
+}
+
+.tarjeta-campos .form-group {
+    margin-bottom: 0;
+}
+
+.tarjeta-campos input {
+    background: white;
+    border: 2px solid #e0e0e0;
+    padding: 1rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.tarjeta-campos input:focus {
+    border-color: #4a7c2c;
+    box-shadow: 0 0 0 3px rgba(74, 124, 44, 0.1);
+    outline: none;
+}
+
+.tarjeta-campos input::placeholder {
+    color: #999;
+}
+
+/* Grid para fecha y CVV en la misma línea */
+.tarjeta-campos .form-group:nth-child(3) {
+    grid-column: 1;
+}
+
+.tarjeta-campos .form-group:nth-child(4) {
+    grid-column: 2;
+}
+
+/* Ajustar grid para mostrar fecha y CVV lado a lado */
+.tarjeta-campos {
+    grid-template-columns: 1fr 1fr;
+}
+
+.tarjeta-campos .form-group:nth-child(1),
+.tarjeta-campos .form-group:nth-child(2) {
+    grid-column: 1 / -1;
+}
+
+.tarjeta-simulada p {
+    color: #856404;
+    font-size: 0.9rem;
+    margin: 0.3rem 0;
+}
+
+.tarjeta-simulada strong {
+    color: #e67e22;
+}
+
+.btn-pagar {
+    width: 100%;
+    background: linear-gradient(135deg, #4a7c2c 0%, #6ba83e 100%);
+    color: white;
+    padding: 1.2rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 2rem;
+}
+
+.btn-pagar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(45, 80, 22, 0.4);
+}
+
+/* Navegación entre pasos */
+.form-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    gap: 1rem;
+}
+
+.btn-volver {
+    background: transparent;
+    color: #4a7c2c;
+    padding: 0.75rem 1.5rem;
+    border: 2px solid #4a7c2c;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+    width: auto;
+}
+
+.btn-volver:hover {
+    background: #4a7c2c;
+    color: white;
+}
+
+.form-navigation .btn-pagar {
+    flex: 1;
+    max-width: 100%;
+    margin: 0;
+}
+
+/* Detalles de confirmación paso 3 */
+.confirmacion-detalles {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.detalle-seccion {
+    background: #f9f9f9;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 2px solid #e0e0e0;
+}
+
+.detalle-seccion h2 {
+    color: #2d5016;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.dato-grupo {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.dato-grupo:last-child {
+    border-bottom: none;
+}
+
+.dato-grupo strong {
+    color: #2d5016;
+    font-weight: 600;
+}
+
+.dato-grupo span {
+    color: #666;
+    text-align: right;
+}
+
+.metodo-seleccionado {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border: 2px solid #4a7c2c;
+    border-radius: 10px;
+}
+
+.metodo-seleccionado svg {
+    color: #4a7c2c;
+}
+
+.metodo-seleccionado span {
+    font-weight: 600;
+    color: #2d5016;
+}
+
+.productos-confirmacion {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.producto-confirmacion-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.producto-nombre {
+    flex: 1;
+    color: #2d5016;
+    font-weight: 600;
+}
+
+.producto-cantidad {
+    color: #666;
+    margin: 0 1rem;
+}
+
+.producto-precio {
+    color: #4a7c2c;
+    font-weight: 700;
+}
+
+.garantia-compra {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(74, 124, 44, 0.05) 0%, rgba(107, 168, 62, 0.05) 100%);
+    border-radius: 10px;
+    margin-top: 1rem;
+}
+
+.garantia-compra svg {
+    color: #4a7c2c;
+}
+
+.garantia-compra p {
+    color: #2d5016;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Braintree Drop-in UI personalización */
+#braintree-dropin-container {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: #f9f9f9;
+    border-radius: 12px;
+    border: 2px solid #e0e0e0;
+}
+
+.braintree-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(74, 124, 44, 0.05) 0%, rgba(107, 168, 62, 0.05) 100%);
+    border-radius: 8px;
+    border-left: 4px solid #4a7c2c;
+}
+
+.braintree-info p {
+    margin: 0.3rem 0;
+    color: #2d5016;
+}
+
+.braintree-info strong {
+    color: #4a7c2c;
+}
+
+/* Métodos de pago */
+.metodos-pago {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.metodo-pago-opcion {
+    position: relative;
+}
+
+.metodo-pago-opcion input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.metodo-pago-opcion label {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.metodo-pago-opcion label:hover {
+    border-color: #4a7c2c;
+    box-shadow: 0 4px 12px rgba(74, 124, 44, 0.1);
+}
+
+.metodo-pago-opcion input[type="radio"]:checked + label {
+    border-color: #4a7c2c;
+    background: linear-gradient(135deg, rgba(74, 124, 44, 0.05) 0%, rgba(107, 168, 62, 0.05) 100%);
+    box-shadow: 0 4px 15px rgba(74, 124, 44, 0.2);
+}
+
+.metodo-icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #f0f7ed 0%, #e8f5e9 100%);
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.metodo-pago-opcion input[type="radio"]:checked + label .metodo-icono {
+    background: linear-gradient(135deg, #4a7c2c 0%, #6ba83e 100%);
+}
+
+.metodo-icono svg {
+    stroke: #4a7c2c;
+}
+
+.metodo-pago-opcion input[type="radio"]:checked + label .metodo-icono svg {
+    stroke: white;
+}
+
+.metodo-info h3 {
+    margin: 0;
+    color: #2d5016;
+    font-size: 1.1rem;
+}
+
+.metodo-info p {
+    margin: 0.3rem 0 0 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.reembolso-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #fff4e6;
+    border-radius: 8px;
+    border-left: 4px solid #f39c12;
+}
+
+.reembolso-info p {
+    margin: 0;
+    color: #856404;
+}
+
+.checkout-resumen {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    height: fit-content;
+    position: sticky;
+    top: 100px;
+}
+
+.checkout-resumen h2 {
+    color: #2d5016;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.resumen-productos {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 1.5rem;
+    padding-right: 0.5rem;
+}
+
+.resumen-productos::-webkit-scrollbar {
+    width: 6px;
+}
+
+.resumen-productos::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.resumen-productos::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #4a7c2c 0%, #6ba83e 100%);
+    border-radius: 10px;
+}
+
+.resumen-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.item-nombre {
+    color: #2d5016;
+    font-weight: 600;
+}
+
+.item-cantidad {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.item-precio {
+    color: #4a7c2c;
+    font-weight: 700;
+}
+
+.resumen-totales {
+    border-top: 2px solid #e0e0e0;
+    padding-top: 1rem;
+}
+
+.resumen-linea {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+    color: #666;
+    font-size: 1rem;
+}
+
+.resumen-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d5016;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid #e0e0e0;
+}
+
+@media (max-width: 1024px) {
+    .checkout-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .checkout-resumen {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .checkout-container {
+        padding: 0 1rem;
+        margin-top: 80px;
+    }
+    
+    .checkout-form,
+    .checkout-resumen {
+        padding: 1.5rem;
+    }
+    
+    .checkout-steps {
+        padding: 1rem 0.5rem;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+    
+    .step-label {
+        font-size: 0.85rem;
+    }
+    
+    .step-line {
+        width: 40px;
+        margin: 0 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .tarjeta-campos {
+        grid-template-columns: 1fr;
+    }
+    
+    .tarjeta-campos .form-group:nth-child(3),
+    .tarjeta-campos .form-group:nth-child(4) {
+        grid-column: 1;
+    }
+    
+    .form-navigation {
+        flex-direction: column;
+    }
+    
+    .btn-volver,
+    .btn-pagar {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .producto-confirmacion-item {
+        flex-wrap: wrap;
+    }
+    
+    .dato-grupo {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.3rem;
+    }
+    
+    .dato-grupo span {
+        text-align: left;
+    }
+}
+
+/* Estilos para selector de tipo de entrega */
+.entrega-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.entrega-opcion {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.entrega-opcion input[type="radio"] {
+    display: none;
+}
+
+.opcion-card {
+    padding: 1.5rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    background: white;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+    height: 100%;
+}
+
+.opcion-card svg {
+    color: #6ba83e;
+    margin-bottom: 0.5rem;
+}
+
+.opcion-card strong {
+    font-size: 1.1rem;
+    color: #2d5016;
+    display: block;
+}
+
+.opcion-card span {
+    font-size: 0.9rem;
+    color: #666;
+    display: block;
+}
+
+.entrega-opcion:hover .opcion-card {
+    border-color: #6ba83e;
+    box-shadow: 0 4px 12px rgba(107, 168, 62, 0.15);
+    transform: translateY(-2px);
+}
+
+.entrega-opcion input[type="radio"]:checked + .opcion-card {
+    border-color: #6ba83e;
+    background: linear-gradient(135deg, #f0f7eb 0%, #e8f4dd 100%);
+    box-shadow: 0 4px 12px rgba(107, 168, 62, 0.2);
+}
+
+.entrega-opcion input[type="radio"]:checked + .opcion-card svg {
+    color: #4a7c2c;
+}
+
+.entrega-opcion input[type="radio"]:checked + .opcion-card strong {
+    color: #4a7c2c;
+}
+
+/* Responsive para selector de entrega */
+@media (max-width: 768px) {
+    .entrega-selector {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}

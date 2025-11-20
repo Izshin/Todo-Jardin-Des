@@ -1,0 +1,258 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ producto.nombre }} - Todo Jardin</title>
+
+    <link rel="stylesheet" href="{% static 'styles/main.css' %}">
+
+    <link rel="stylesheet" href="{% static 'styles/producto_detalle.css' %}">
+
+</head>
+
+<body>
+
+    <!-- Top Navigation Bar -->
+
+    <nav class="topbar">
+
+        <div class="topbar-container">
+
+            <div class="logo">
+
+                <a href="{% url 'mainPage' %}">
+                    <img src="{% static 'images/Logo.png' %}" alt="Todo Jardin Logo">
+                </a>
+
+                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+
+            </div>
+
+            <div class="nav-links">
+
+
+                <a href="{% url 'productos' %}">Productos</a>
+
+                <a href="{% url 'terminos' %}">Términos y Condiciones</a>
+
+                {% if user_is_admin %}
+                <a href="{% url 'admin_panel' %}" class="admin-link">Panel Admin</a>
+                {% endif %}
+
+            </div>
+
+            <!-- Buscador en navegación -->
+            <div class="search-bar-nav">
+                <form method="GET" action="{% url 'productos' %}" class="search-form-nav">
+                    <input type="text" name="buscar" placeholder="Buscar productos..." class="search-input-nav" value="">
+                    <button type="submit" class="search-btn-nav">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <div class="nav-icons">
+                <div class="carrito-container">
+                    <a href="{% url 'carrito' %}" class="carrito-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        {% if cart_info.cantidad_total > 0 %}
+                        <span class="carrito-badge">{{ cart_info.cantidad_total }}</span>
+                        {% endif %}
+                    </a>
+                    
+                    <!-- Mini Carrito Dropdown -->
+                    {% if cart_info.tiene_items %}
+                    <div class="mini-carrito">
+                        <div class="mini-carrito-header">
+                            <h3>Mi Carrito</h3>
+                            <span class="mini-carrito-count">{{ cart_info.cantidad_total }} artículo{% if cart_info.cantidad_total != 1 %}s{% endif %}</span>
+                        </div>
+                        <div class="mini-carrito-items">
+                            {% for item_data in cart_info.items %}
+                            <div class="mini-carrito-item">
+                                {% if item_data.item.producto.imagen_principal %}
+                                <img src="{{ item_data.item.producto.imagen_principal.imagen.url }}" alt="{{ item_data.item.producto.nombre }}">
+                                {% else %}
+                                <img src="https://via.placeholder.com/60x60/4a7c2c/ffffff?text=Sin+Imagen" alt="{{ item_data.item.producto.nombre }}">
+                                {% endif %}
+                                <div class="mini-item-info">
+                                    <p class="mini-item-nombre">{{ item_data.item.producto.nombre }}</p>
+                                    <p class="mini-item-cantidad">{{ item_data.item.cantidad }} x {{ item_data.precio_unitario }}€</p>
+                                </div>
+                                <p class="mini-item-total">{{ item_data.total }}€</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mini-carrito-footer">
+                            <div class="mini-carrito-subtotal">
+                                <span>Subtotal:</span>
+                                <span class="subtotal-precio">{{ cart_info.subtotal }}€</span>
+                            </div>
+                            <div class="mini-carrito-acciones">
+                                <a href="{% url 'carrito' %}" class="btn-ver-carrito">Ver Carrito</a>
+                                <a href="{% url 'checkout' %}" class="btn-checkout">Finalizar Compra</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="mini-carrito mini-carrito-vacio">
+                        <p>Tu carrito está vacío</p>
+                        <a href="{% url 'productos' %}" class="btn-ver-productos">Ver Productos</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="user-circle">
+
+                <a href="{% url 'user' %}" class="user-link">
+
+                    <div class="circle">
+
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+
+                        </svg>
+
+                    </div>
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+    <!-- Detalle del Producto -->
+
+    <div class="detalle-page">
+
+        <div class="breadcrumb">
+            <a href="{% url 'productos' %}">Productos</a> / 
+            <span>{{ producto.nombre }}</span>
+        </div>
+
+        <div class="detalle-container">
+
+            <div class="producto-imagen-grande">
+                {% if producto.imagen_principal %}
+                <img src="{{ producto.imagen_principal.imagen.url }}" 
+                     alt="{{ producto.nombre }}">
+                {% else %}
+                <img src="https://via.placeholder.com/600x600/4a7c2c/ffffff?text={{ producto.nombre }}" 
+                     alt="{{ producto.nombre }}">
+                {% endif %}
+            </div>
+
+            <div class="producto-info-detalle">
+                <h1>{{ producto.nombre }}</h1>
+
+                {% if producto.marca %}
+                <p class="marca">Por {{ producto.marca.nombre }}</p>
+                {% endif %}
+
+                {% if producto.categoria %}
+                <span class="categoria-badge">{{ producto.categoria.nombre }}</span>
+                {% endif %}
+
+                <div class="precio-detalle">
+                    {% if producto.precio_oferta %}
+                    <span class="precio-original">€{{ producto.precio }}</span>
+                    <span class="precio-oferta">€{{ producto.precio_oferta }}</span>
+                    <span class="ahorro">¡Ahorras €{{ producto.precio|floatformat:2|add:"-"|add:producto.precio_oferta|floatformat:2 }}!</span>
+                    {% else %}
+                    <span class="precio">€{{ producto.precio }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="stock-info">
+                    {% if producto.stock > 0 %}
+                    <span class="disponible">✓ En stock ({{ producto.stock }} unidades)</span>
+                    {% else %}
+                    <span class="agotado">Producto agotado</span>
+                    {% endif %}
+                </div>
+
+                <p class="descripcion-completa">{{ producto.descripcion }}</p>
+
+                {% if user_is_admin %}
+                <div class="admin-actions">
+                    <a href="{% url 'admin_editar_producto' producto.id %}" class="btn-admin-edit">
+                        ✏️ Editar Producto
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="caracteristicas">
+                    <h3>Características</h3>
+                    <ul>
+                        {% if producto.color %}
+                        <li><strong>Color:</strong> {{ producto.color }}</li>
+                        {% endif %}
+                        {% if producto.material %}
+                        <li><strong>Material:</strong> {{ producto.material }}</li>
+                        {% endif %}
+                        {% if producto.genero %}
+                        <li><strong>Tipo:</strong> {{ producto.get_genero_display }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                {% if producto.stock > 0 %}
+                <div class="acciones">
+                    <a href="{% url 'agregar_al_carrito' producto.id %}" class="btn-añadir-carrito">
+                        🛒 Añadir al Carrito
+                    </a>
+                    <a href="{% url 'comprar_ahora' producto.id %}" class="btn-comprar">
+                        Comprar Ahora
+                    </a>
+                </div>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        {% if productos_relacionados %}
+        <div class="productos-relacionados">
+            <h2>Productos Relacionados</h2>
+            <div class="relacionados-grid">
+                {% for prod in productos_relacionados %}
+                <div class="producto-card-mini">
+                    {% if prod.imagen_principal %}
+                    <img src="{{ prod.imagen_principal.imagen.url }}" 
+                         alt="{{ prod.nombre }}">
+                    {% else %}
+                    <img src="https://via.placeholder.com/250x250/4a7c2c/ffffff?text={{ prod.nombre }}" 
+                         alt="{{ prod.nombre }}">
+                    {% endif %}
+                    <h4>{{ prod.nombre }}</h4>
+                    <p class="precio-mini">€{{ prod.precio_oferta|default:prod.precio }}</p>
+                    <a href="{% url 'producto_detalle' prod.id %}" class="btn-ver-mini">Ver Producto</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+</body>
+
+</html>

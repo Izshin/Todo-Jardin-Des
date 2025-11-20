@@ -1,0 +1,85 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Todo Jardin</title>
+    <link rel="stylesheet" href="{% static 'styles/main.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/admin.css' %}">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="topbar admin-topbar">
+        <div class="topbar-container">
+            <div class="logo">
+                <a href="{% url 'mainPage' %}">
+                    <img src="{% static 'images/Logoadmin.png' %}" alt="Todo Jardin Logo">
+                </a>
+                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="{% url 'productos' %}">Productos</a>
+                <div class="admin-dropdown">
+                    <a href="{% url 'admin_panel' %}" class="admin-link active">Panel de Administración</a>
+                    <div class="admin-dropdown-content">
+                        <a href="{% url 'admin_panel' %}" class="active">Dashboard</a>
+                        <a href="{% url 'admin_pedidos' %}">Pedidos</a>
+                        <a href="{% url 'admin_productos' %}">Productos</a>
+                        <a href="{% url 'admin_usuarios' %}">Usuarios</a>
+                    </div>
+                </div>
+            </div>
+            <div class="user-circle">
+                <a href="{% url 'user' %}" class="user-link">
+                    <div class="circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                        </svg>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="admin-container">
+        <h1>Panel de Administración</h1>
+
+        <div class="admin-stats">
+            <div class="stat-card">
+                <h3>Total Pedidos</h3>
+                <p class="stat-number">{{ total_pedidos }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Productos</h3>
+                <p class="stat-number">{{ total_productos }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Usuarios</h3>
+                <p class="stat-number">{{ total_usuarios }}</p>
+            </div>
+        </div>
+
+        <div class="admin-sections">
+            <a href="{% url 'admin_pedidos' %}" class="admin-card">
+                <img src="{% static 'images/for-sale-svgrepo-com.svg' %}" alt="Pedidos" width="48" height="48" style="filter: invert(38%) sepia(96%) saturate(1826%) hue-rotate(201deg) brightness(98%) contrast(92%);">
+                <h2>Gestión de Pedidos</h2>
+                <p>Ver y actualizar estados de pedidos</p>
+            </a>
+
+            <a href="{% url 'admin_productos' %}" class="admin-card">
+                <img src="{% static 'images/plant-svgrepo-com.svg' %}" alt="Productos" width="48" height="48" style="filter: invert(38%) sepia(96%) saturate(1826%) hue-rotate(201deg) brightness(98%) contrast(92%);">
+                <h2>Gestión de Productos</h2>
+                <p>Añadir, editar y actualizar stock</p>
+            </a>
+
+            <a href="{% url 'admin_usuarios' %}" class="admin-card">
+                <img src="{% static 'images/character01-svgrepo-com.svg' %}" alt="Usuarios" width="48" height="48" style="filter: invert(38%) sepia(96%) saturate(1826%) hue-rotate(201deg) brightness(98%) contrast(92%);">
+                <h2>Gestión de Usuarios</h2>
+                <p>Administrar permisos de administrador</p>
+            </a>
+        </div>
+    </main>
+</body>
+</html>
