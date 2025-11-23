@@ -1084,7 +1084,7 @@ def procesar_pago(request):
     # Obtener datos de la sesión
     datos_envio = request.session.get('datos_envio', {})
     tipo_entrega = datos_envio.get('tipo_entrega', 'domicilio')
-    metodo_pago = 'tarjeta'  # Solo aceptamos pago con tarjeta vía Braintree
+    metodo_pago = request.session.get('metodo_pago', 'tarjeta')
     
     # Si es invitado, actualizar sus datos con los de la sesión
     es_invitado = request.session.get('es_invitado', False)
@@ -1097,11 +1097,14 @@ def procesar_pago(request):
         cliente.ciudad = datos_envio.get('ciudad', '')
         cliente.codigo_postal = datos_envio.get('codigo_postal', '')
         cliente.save()
-        direccion_envio = f"{cliente.direccion}, {cliente.ciudad}, {cliente.codigo_postal}"
-        telefono = cliente.telefono
+    
+    # Construir dirección de envío según tipo de entrega
+    if tipo_entrega == 'tienda':
+        direccion_envio = "Recogida en tienda"
     else:
         direccion_envio = f"{cliente.direccion}, {cliente.ciudad}, {cliente.codigo_postal}"
-        telefono = cliente.telefono
+    
+    telefono = cliente.telefono
     
     # Crear el pedido DIRECTAMENTE EN ESTADO CONFIRMADO (sin token)
     numero_pedido = f"PED-{uuid.uuid4().hex[:8].upper()}"
