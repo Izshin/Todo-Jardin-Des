@@ -444,9 +444,9 @@ def productos(request):
     else:
         productos_list = productos_list.order_by('nombre')
     
-    # Obtener todas las categorías y marcas para los filtros
-    categorias = Categoria.objects.all()
-    marcas = Marca.objects.filter(productos__isnull=False).distinct()
+    # Obtener todas las categorías y marcas para los filtros (solo las que tienen productos disponibles)
+    categorias = Categoria.objects.filter(productos__esta_disponible=True).distinct()
+    marcas = Marca.objects.filter(productos__esta_disponible=True).distinct()
     
     # Crear lista de IDs seleccionados para facilitar en el template
     categorias_ids_seleccionadas = [int(id) for id in categorias_ids]

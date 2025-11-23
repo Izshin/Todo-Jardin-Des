@@ -105,6 +105,27 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="genero">Tipo</label>
+                    <select id="genero" name="genero">
+                        <option value="">Sin especificar</option>
+                        <option value="hombre">Hombre</option>
+                        <option value="mujer">Mujer</option>
+                        <option value="unisex">Unisex</option>
+                        <option value="nino">Niño</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="color">Color</label>
+                    <input type="text" id="color" name="color" placeholder="Ej: Verde, Rojo, Azul">
+                </div>
+                
+                <div class="form-group">
+                    <label for="material">Material</label>
+                    <input type="text" id="material" name="material" placeholder="Ej: Algodón, Plástico, Madera">
+                </div>
+                
+                <div class="form-group">
                     <label for="imagen">Imagen del Producto</label>
                     <input type="file" id="imagen" name="imagen" accept="image/*" class="file-input" onchange="previewImage(event)">
                     <small class="form-text">Formatos aceptados: JPG, PNG, GIF (máx. 5MB)</small>

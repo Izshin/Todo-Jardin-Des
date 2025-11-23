@@ -107,6 +107,27 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="genero">Tipo</label>
+                    <select id="genero" name="genero">
+                        <option value="">Sin especificar</option>
+                        <option value="hombre" {% if producto.genero == 'hombre' %}selected{% endif %}>Hombre</option>
+                        <option value="mujer" {% if producto.genero == 'mujer' %}selected{% endif %}>Mujer</option>
+                        <option value="unisex" {% if producto.genero == 'unisex' %}selected{% endif %}>Unisex</option>
+                        <option value="nino" {% if producto.genero == 'nino' %}selected{% endif %}>Niño</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="color">Color</label>
+                    <input type="text" id="color" name="color" value="{{ producto.color }}" placeholder="Ej: Verde, Rojo, Azul">
+                </div>
+                
+                <div class="form-group">
+                    <label for="material">Material</label>
+                    <input type="text" id="material" name="material" value="{{ producto.material }}" placeholder="Ej: Algodón, Plástico, Madera">
+                </div>
+                
+                <div class="form-group">
                     <label for="imagen">Imagen del Producto</label>
                     {% if producto.imagen_principal %}
                     <div class="current-image">

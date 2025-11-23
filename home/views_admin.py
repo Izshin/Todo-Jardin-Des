@@ -223,6 +223,11 @@ def admin_crear_producto(request):
         es_destacado = request.POST.get('es_destacado') == 'on'
         imagen = request.FILES.get('imagen')
         
+        # Características del producto
+        genero = request.POST.get('genero') or None
+        color = request.POST.get('color', '').strip() or None
+        material = request.POST.get('material', '').strip() or None
+        
         # Manejar creación de nueva categoría
         nueva_categoria = request.POST.get('nueva_categoria', '').strip()
         if nueva_categoria:
@@ -248,6 +253,9 @@ def admin_crear_producto(request):
             stock=stock,
             categoria=categoria,
             marca=marca,
+            genero=genero,
+            color=color,
+            material=material,
             es_destacado=es_destacado,
             esta_disponible=True
         )
@@ -294,6 +302,11 @@ def admin_editar_producto(request, producto_id):
         producto.descripcion = request.POST.get('descripcion')
         producto.precio = Decimal(request.POST.get('precio', '0'))
         producto.stock = int(request.POST.get('stock', '0'))
+        
+        # Características del producto
+        producto.genero = request.POST.get('genero') or None
+        producto.color = request.POST.get('color', '').strip() or None
+        producto.material = request.POST.get('material', '').strip() or None
         
         categoria_id = request.POST.get('categoria')
         marca_id = request.POST.get('marca')
