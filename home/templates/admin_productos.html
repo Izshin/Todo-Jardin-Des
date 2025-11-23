@@ -8,23 +8,17 @@
     <title>Gestión de Productos - Admin</title>
     <link rel="stylesheet" href="{% static 'styles/main.css' %}">
     <link rel="stylesheet" href="{% static 'styles/admin.css' %}">
-    <style>
-        body {
-            overflow: hidden;
-        }
-    </style>
 </head>
 <body>
     <nav class="topbar admin-topbar">
         <div class="topbar-container">
             <div class="logo">
-                <a href="{% url 'mainPage' %}">
+                <a href="{% url 'admin_panel' %}">
                     <img src="{% static 'images/Logoadmin.png' %}" alt="Todo Jardin Logo">
                 </a>
-                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+                <h1><a href="{% url 'admin_panel' %}">Todo Jardin</a></h1>
             </div>
             <div class="nav-links">
-                <a href="{% url 'productos' %}">Productos</a>
                 <div class="admin-dropdown">
                     <a href="{% url 'admin_panel' %}" class="admin-link active">Panel de Administración</a>
                     <div class="admin-dropdown-content">
@@ -55,6 +49,55 @@
             <a href="{% url 'admin_crear_producto' %}" class="btn-primary">+ Nuevo Producto</a>
         </div>
 
+        <!-- Filtros -->
+        <div class="admin-filters">
+            <form method="GET" action="{% url 'admin_productos' %}" class="filters-form">
+                <div class="filter-row">
+                    <div class="filter-group filter-group-search">
+                        <label>Buscar:</label>
+                        <input type="text" name="buscar" placeholder="Nombre o descripción..." value="{{ buscar }}">
+                        <div class="filter-price-row">
+                        <div class="slider-wrapper-admin">
+                        <div class="slider-track-admin"></div>
+                        <div class="slider-range-admin" id="sliderRange"></div>
+                        <input type="range" id="minPrice" name="precio_min" min="{{ precio_minimo_global }}" max="{{ precio_maximo_global }}" value="{{ precio_min }}" step="1">
+                        <input type="range" id="maxPrice" name="precio_max" min="{{ precio_minimo_global }}" max="{{ precio_maximo_global }}" value="{{ precio_max }}" step="1">
+                    </div>
+                    <div class="price-labels-admin">
+                        <span id="minPriceLabel">€{{ precio_min }}</span>
+                        <span id="maxPriceLabel">€{{ precio_max }}</span>
+                    </div>
+                </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>Categorías:</label>
+                        <select name="categoria" multiple size="3">
+                            {% for cat in categorias %}
+                            <option value="{{ cat.id }}" {% if cat.id in categorias_ids_seleccionadas %}selected{% endif %}>{{ cat.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>Marcas:</label>
+                        <select name="marca" multiple size="3">
+                            {% for marca in marcas %}
+                            <option value="{{ marca.id }}" {% if marca.id in marcas_ids_seleccionadas %}selected{% endif %}>{{ marca.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+               
+                
+                <div class="filter-actions">
+                    <button type="submit" class="btn-filter">Filtrar</button>
+                    <a href="{% url 'admin_productos' %}" class="btn-clear">Limpiar</a>
+                </div>
+            </form>
+        </div>
+
         <div class="admin-table-container">
             <table class="admin-table">
                 <thead>
@@ -77,18 +120,25 @@
                         <td>{{ producto.nombre }}</td>
                         <td>{{ producto.categoria.nombre|default:"-" }}</td>
                         <td>{{ producto.marca.nombre|default:"-" }}</td>
-                        <td>
-                            {% if producto.precio_oferta %}
-                            <s>€{{ producto.precio }}</s> <strong>€{{ producto.precio_oferta }}</strong>
-                            {% else %}
-                            €{{ producto.precio }}
-                            {% endif %}
-                        </td>
+                        <td>€{{ producto.precio }}</td>
                         <td>{{ producto.stock }}</td>
                         <td>{% if producto.es_destacado %}✓{% else %}-{% endif %}</td>
                         <td>{% if producto.esta_disponible %}✓{% else %}-{% endif %}</td>
                         <td>
-                            <a href="{% url 'admin_editar_producto' producto.id %}" class="btn-admin btn-edit">Editar</a>
+                            <div class="action-buttons-container">
+                                <a href="{% url 'admin_editar_producto' producto.id %}" class="btn-admin btn-edit">Editar</a>
+                                <form method="POST" action="{% url 'admin_eliminar_producto' producto.id %}" class="delete-form" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este producto?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-delete-small">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
@@ -100,5 +150,43 @@
             </table>
         </div>
     </main>
+    
+    <script>
+        const minPrice = document.getElementById('minPrice');
+        const maxPrice = document.getElementById('maxPrice');
+        const minPriceLabel = document.getElementById('minPriceLabel');
+        const maxPriceLabel = document.getElementById('maxPriceLabel');
+        const sliderRange = document.getElementById('sliderRange');
+        const globalMin = parseInt(minPrice.min);
+        const globalMax = parseInt(minPrice.max);
+
+        function updateSlider() {
+            let minVal = parseInt(minPrice.value);
+            let maxVal = parseInt(maxPrice.value);
+
+            // Asegurar que min no sea mayor que max (intercambiar si es necesario)
+            if (minVal > maxVal) {
+                const temp = maxVal;
+                maxVal = minVal;
+                minVal = temp;
+                minPrice.value = minVal;
+                maxPrice.value = maxVal;
+            }
+
+            minPriceLabel.textContent = '€' + minVal;
+            maxPriceLabel.textContent = '€' + maxVal;
+
+            // Actualizar barra de progreso visual
+            const percentMin = ((minVal - globalMin) / (globalMax - globalMin)) * 100;
+            const percentMax = ((maxVal - globalMin) / (globalMax - globalMin)) * 100;
+            sliderRange.style.left = percentMin + '%';
+            sliderRange.style.width = (percentMax - percentMin) + '%';
+        }
+
+        minPrice.addEventListener('input', updateSlider);
+        maxPrice.addEventListener('input', updateSlider);
+
+        updateSlider();
+    </script>
 </body>
 </html>

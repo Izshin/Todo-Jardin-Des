@@ -13,13 +13,12 @@
     <nav class="topbar admin-topbar">
         <div class="topbar-container">
             <div class="logo">
-                <a href="{% url 'mainPage' %}">
+                <a href="{% url 'admin_panel' %}">
                     <img src="{% static 'images/Logoadmin.png' %}" alt="Todo Jardin Logo">
                 </a>
-                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+                <h1><a href="{% url 'admin_panel' %}">Todo Jardin</a></h1>
             </div>
             <div class="nav-links">
-                <a href="{% url 'productos' %}">Productos</a>
                 <div class="admin-dropdown">
                     <a href="{% url 'admin_panel' %}" class="admin-link active">Panel de Administración</a>
                     <div class="admin-dropdown-content">

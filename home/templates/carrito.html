@@ -67,9 +67,6 @@
               <div class="item-info">
                 <h3>{{ item_data.item.producto.nombre }}</h3>
                 <p class="item-precio">€{{ item_data.precio_unitario }}</p>
-                {% if item_data.item.producto.precio_oferta %}
-                  <span class="badge-oferta-small">OFERTA</span>
-                {% endif %}
               </div>
 
               <div class="item-cantidad">

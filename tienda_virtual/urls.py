@@ -19,6 +19,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from home import views
+from home import views_admin
 
 urlpatterns = [
     path('', views.mainPage, name='mainPage'),
@@ -27,6 +28,7 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('registro/', views.registro, name='registro'),
     path('perfil/', views.perfil, name='perfil'),
+    path('admin-perfil/', views.admin_perfil, name='admin_perfil'),
     path('logout/', views.logout, name='logout'),
     path('eliminar-cuenta/', views.eliminar_cuenta, name='eliminar_cuenta'),
     path('productos/', views.productos, name='productos'),
@@ -39,6 +41,8 @@ urlpatterns = [
     path('checkout/', views.checkout, name='checkout'),
     path('checkout/paso2/', views.checkout_paso2, name='checkout_paso2'),
     path('checkout/paso3/', views.checkout_paso3, name='checkout_paso3'),
+    path('checkout-rapido/<int:producto_id>/', views.checkout_rapido, name='checkout_rapido'),
+    path('procesar-checkout-rapido/', views.procesar_checkout_rapido, name='procesar_checkout_rapido'),
     path('procesar-pago/', views.procesar_pago, name='procesar_pago'),
     path('confirmacion/<int:pedido_id>/', views.confirmacion_pedido, name='confirmacion_pedido'),
     path('confirmar-pedido/<int:pedido_id>/', views.confirmar_pedido, name='confirmar_pedido'),
@@ -47,16 +51,19 @@ urlpatterns = [
     path('buscar-pedido/', views.buscar_pedido, name='buscar_pedido'),
     
     # Admin URLs
-    path('admin-panel/', views.admin_panel, name='admin_panel'),
-    path('admin-panel/pedidos/', views.admin_pedidos, name='admin_pedidos'),
-    path('admin-panel/pedidos/<int:pedido_id>/estado/', views.admin_actualizar_estado_pedido, name='admin_actualizar_estado_pedido'),
-    path('admin-panel/pedidos/<int:pedido_id>/eliminar/', views.admin_eliminar_pedido, name='admin_eliminar_pedido'),
-    path('admin-panel/productos/', views.admin_productos, name='admin_productos'),
-    path('admin-panel/productos/crear/', views.admin_crear_producto, name='admin_crear_producto'),
-    path('admin-panel/productos/<int:producto_id>/editar/', views.admin_editar_producto, name='admin_editar_producto'),
-    path('admin-panel/usuarios/', views.admin_usuarios, name='admin_usuarios'),
-    path('admin-panel/usuarios/<int:usuario_id>/toggle-admin/', views.admin_toggle_admin, name='admin_toggle_admin'),
-    path('admin-panel/usuarios/<int:usuario_id>/eliminar/', views.admin_eliminar_usuario, name='admin_eliminar_usuario'),
+    path('admin-panel/', views_admin.admin_panel, name='admin_panel'),
+    path('admin-panel/pedidos/', views_admin.admin_pedidos, name='admin_pedidos'),
+    path('admin-panel/pedidos/<int:pedido_id>/estado/', views_admin.admin_actualizar_estado_pedido, name='admin_actualizar_estado_pedido'),
+    path('admin-panel/pedidos/<int:pedido_id>/eliminar/', views_admin.admin_eliminar_pedido, name='admin_eliminar_pedido'),
+    path('admin-panel/productos/', views_admin.admin_productos, name='admin_productos'),
+    path('admin-panel/productos/crear/', views_admin.admin_crear_producto, name='admin_crear_producto'),
+    path('admin-panel/productos/<int:producto_id>/editar/', views_admin.admin_editar_producto, name='admin_editar_producto'),
+    path('admin-panel/productos/<int:producto_id>/eliminar/', views_admin.admin_eliminar_producto, name='admin_eliminar_producto'),
+    path('admin-panel/usuarios/', views_admin.admin_usuarios, name='admin_usuarios'),
+    path('admin-panel/usuarios/crear/', views_admin.admin_crear_usuario, name='admin_crear_usuario'),
+    path('admin-panel/usuarios/<int:usuario_id>/editar/', views_admin.admin_editar_usuario, name='admin_editar_usuario'),
+    path('admin-panel/usuarios/<int:usuario_id>/toggle-admin/', views_admin.admin_toggle_admin, name='admin_toggle_admin'),
+    path('admin-panel/usuarios/<int:usuario_id>/eliminar/', views_admin.admin_eliminar_usuario, name='admin_eliminar_usuario'),
     
     path('admin/', admin.site.urls),
 ]

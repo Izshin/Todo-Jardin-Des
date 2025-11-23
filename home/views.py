@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from django.template import loader
 from django.shortcuts import render, redirect, get_object_or_404
+from django.db import models
 from .models import (
     Escaparate, Articulo, Cliente, 
     Producto, Categoria, Marca, Carrito, ItemCarrito, Pedido, ItemPedido
@@ -66,7 +67,7 @@ def obtener_info_carrito(request):
         subtotal = Decimal('0.00')
         
         for item in items:
-            precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+            precio = item.producto.precio
             total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
             subtotal += total_item
             items_con_total.append({
@@ -105,13 +106,10 @@ def index(request):
     return HttpResponse(plantilla.render(contexto, request))
 
 def mainPage(request):
-    # Obtener productos destacados o en oferta
+    # Obtener productos destacados
     productos_destacados = Producto.objects.filter(
         es_destacado=True
-    ) | Producto.objects.filter(
-        precio_oferta__isnull=False
-    )
-    productos_destacados = productos_destacados.distinct()[:4]  # Mostrar máximo 4 productos
+    ).distinct()[:4]  # Mostrar máximo 4 productos
     
     contexto = {
         'productos_destacados': productos_destacados,
@@ -136,8 +134,11 @@ def user(request):
     es_invitado = request.session.get('es_invitado', False)
     
     if cliente_id:
-        # Si está autenticado, ir al perfil
-        return redirect('perfil')
+        # Si está autenticado, verificar si es admin
+        if es_usuario_admin(request):
+            return redirect('admin_perfil')
+        else:
+            return redirect('perfil')
     else:
         # Si es invitado sin haber comprado, redirigir a registro
         if es_invitado:
@@ -172,7 +173,11 @@ def login(request):
             if cliente.password == password:
                 # Guardar el ID del cliente en la sesión
                 request.session['cliente_id'] = cliente.id
-                return redirect('perfil')
+                # Redirigir según tipo de usuario
+                if cliente.is_admin:
+                    return redirect('admin_panel')
+                else:
+                    return redirect('perfil')
             else:
                 contexto = {
                     'error': 'Email o contraseña incorrectos',
@@ -336,6 +341,29 @@ def perfil(request):
     }
     return render(request, 'perfil.html', contexto)
 
+def admin_perfil(request):
+    """Vista del perfil de administrador - solo permite cerrar sesión"""
+    cliente_id = request.session.get('cliente_id')
+    
+    if not cliente_id:
+        return redirect('login')
+    
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+        # Verificar que sea admin
+        if not cliente.is_admin:
+            return redirect('perfil')
+    except Cliente.DoesNotExist:
+        request.session.flush()
+        return redirect('login')
+    
+    contexto = {
+        'cliente': cliente,
+        'user_is_admin': True,
+        'cart_info': obtener_info_carrito(request)
+    }
+    return render(request, 'admin_perfil.html', contexto)
+
 def logout(request):
     """Cerrar sesión"""
     request.session.flush()
@@ -388,15 +416,22 @@ def productos(request):
         marcas_seleccionadas = Marca.objects.filter(id__in=marcas_ids)
         productos_list = productos_list.filter(marca__id__in=marcas_ids)
     
-    # Filtro por ofertas
-    mostrar_ofertas = request.GET.get('ofertas')
-    if mostrar_ofertas:
-        productos_list = productos_list.filter(precio_oferta__isnull=False)
+    # Filtro por rango de precio
+    precio_min = request.GET.get('precio_min')
+    precio_max = request.GET.get('precio_max')
     
-    # Filtro por destacados
-    mostrar_destacados = request.GET.get('destacados')
-    if mostrar_destacados:
-        productos_list = productos_list.filter(es_destacado=True)
+    if precio_min:
+        productos_list = productos_list.filter(precio__gte=Decimal(precio_min))
+    if precio_max:
+        productos_list = productos_list.filter(precio__lte=Decimal(precio_max))
+    
+    # Obtener rango de precios de todos los productos
+    precios = Producto.objects.filter(esta_disponible=True).aggregate(
+        min_precio=models.Min('precio'),
+        max_precio=models.Max('precio')
+    )
+    precio_minimo_db = precios['min_precio'] or Decimal('0')
+    precio_maximo_db = precios['max_precio'] or Decimal('100')
     
     # Ordenamiento
     orden = request.GET.get('orden', 'nombre')
@@ -426,9 +461,11 @@ def productos(request):
         'categorias_ids_seleccionadas': categorias_ids_seleccionadas,
         'marcas_ids_seleccionadas': marcas_ids_seleccionadas,
         'buscar': buscar,
-        'mostrar_ofertas': mostrar_ofertas,
-        'mostrar_destacados': mostrar_destacados,
         'orden': orden,
+        'precio_min': precio_min or '',
+        'precio_max': precio_max or '',
+        'precio_minimo_db': float(precio_minimo_db),
+        'precio_maximo_db': float(precio_maximo_db),
         'cart_info': obtener_info_carrito(request),
         'user_is_admin': es_usuario_admin(request)
     }
@@ -496,7 +533,7 @@ def carrito(request):
     
     items_con_total = []
     for item in items:
-        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        precio = item.producto.precio
         total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
         subtotal += total_item
         items_con_total.append({
@@ -731,7 +768,7 @@ def checkout(request):
     items_con_total = []
     
     for item in items:
-        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        precio = item.producto.precio
         total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
         subtotal += total_item
         items_con_total.append({
@@ -806,7 +843,7 @@ def checkout_paso2(request):
             items_con_total = []
             
             for item in items:
-                precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+                precio = item.producto.precio
                 total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
                 subtotal += total_item
                 items_con_total.append({
@@ -866,7 +903,7 @@ def checkout_paso2(request):
     items_con_total = []
     
     for item in items:
-        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        precio = item.producto.precio
         total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
         subtotal += total_item
         items_con_total.append({
@@ -992,7 +1029,7 @@ def procesar_pago(request):
     # Calcular totales
     subtotal = Decimal('0.00')
     for item in items:
-        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        precio = item.producto.precio
         subtotal += (precio * item.cantidad).quantize(Decimal('0.01'))
     
     subtotal = subtotal.quantize(Decimal('0.01'))
@@ -1088,7 +1125,7 @@ def procesar_pago(request):
     
     # Crear items del pedido (NO reducir stock hasta que se confirme)
     for item in items:
-        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        precio = item.producto.precio
         total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
         
         ItemPedido.objects.create(
@@ -1756,10 +1793,388 @@ def buscar_pedido(request):
     
     return render(request, 'buscar_pedido.html', contexto)
 
+def checkout_rapido(request, producto_id):
+    """Vista de checkout rápido - Todo en un solo paso"""
+    producto = get_object_or_404(Producto, id=producto_id)
+    
+    # Verificar stock
+    if producto.stock <= 0:
+        return redirect('producto_detalle', producto_id=producto_id)
+    
+    # Obtener cliente si está autenticado
+    cliente_id = request.session.get('cliente_id')
+    cliente = None
+    if cliente_id:
+        try:
+            cliente = Cliente.objects.get(id=cliente_id)
+        except Cliente.DoesNotExist:
+            pass
+    
+    # Calcular totales para cantidad 1
+    precio = producto.precio
+    subtotal = precio
+    iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
+    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+    envio_falta = (Decimal('50.00') - subtotal).quantize(Decimal('0.01')) if subtotal < 50 else Decimal('0.00')
+    
+    # Generar token de Braintree
+    try:
+        client_token = gateway.client_token.generate()
+    except Exception as e:
+        client_token = None
+        print(f"Error generando Braintree token: {e}")
+    
+    contexto = {
+        'producto': producto,
+        'cliente': cliente,
+        'subtotal': subtotal.quantize(Decimal('0.01')),
+        'iva': iva,
+        'coste_envio': coste_envio,
+        'total': total,
+        'envio_falta': envio_falta,
+        'braintree_client_token': client_token,
+    }
+    
+    return render(request, 'checkout_rapido.html', contexto)
+
+def procesar_checkout_rapido(request):
+    """Procesar compra rápida - Crear pedido directamente en estado confirmado"""
+    if request.method != 'POST':
+        return redirect('productos')
+    
+    # Obtener datos del formulario
+    producto_id = request.POST.get('producto_id')
+    cantidad = int(request.POST.get('cantidad', 1))
+    
+    producto = get_object_or_404(Producto, id=producto_id)
+    
+    # Verificar stock
+    if producto.stock < cantidad:
+        contexto = {
+            'producto': producto,
+            'error_message': f'Stock insuficiente. Solo hay {producto.stock} unidades disponibles.',
+            'cliente': None,
+        }
+        return render(request, 'checkout_rapido.html', contexto)
+    
+    # Obtener datos personales del formulario
+    nombre = request.POST.get('nombre', '').strip()
+    apellidos = request.POST.get('apellidos', '').strip()
+    email = request.POST.get('email', '').strip()
+    telefono = request.POST.get('telefono', '').strip()
+    
+    # Obtener datos de envío
+    tipo_entrega = request.POST.get('tipo_entrega', 'domicilio')
+    direccion = request.POST.get('direccion', '').strip() if tipo_entrega == 'domicilio' else 'Recogida en tienda'
+    ciudad = request.POST.get('ciudad', '').strip() if tipo_entrega == 'domicilio' else 'N/A'
+    codigo_postal = request.POST.get('codigo_postal', '').strip() if tipo_entrega == 'domicilio' else 'N/A'
+    
+    # Obtener método de pago
+    metodo_pago = request.POST.get('metodo_pago', 'tarjeta')
+    
+    # Validar campos requeridos
+    if not all([nombre, apellidos, email, telefono]):
+        contexto = {
+            'producto': producto,
+            'error_message': 'Por favor, completa todos los campos obligatorios.',
+            'cliente': None,
+        }
+        return render(request, 'checkout_rapido.html', contexto)
+    
+    # Procesar pago si es con tarjeta
+    if metodo_pago == 'tarjeta':
+        payment_method_nonce = request.POST.get('payment_method_nonce')
+        
+        if not payment_method_nonce:
+            contexto = {
+                'producto': producto,
+                'error_message': 'No se recibió el método de pago. Por favor, intenta nuevamente.',
+                'cliente': None,
+            }
+            return render(request, 'checkout_rapido.html', contexto)
+        
+        # Calcular total
+        precio = producto.precio
+        subtotal = (precio * cantidad).quantize(Decimal('0.01'))
+        iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
+        coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+        total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+        
+        # Procesar transacción con Braintree
+        try:
+            result = gateway.transaction.sale({
+                'amount': str(total),
+                'payment_method_nonce': payment_method_nonce,
+                'options': {
+                    'submit_for_settlement': True
+                }
+            })
+            
+            if not result.is_success:
+                contexto = {
+                    'producto': producto,
+                    'error_message': f'Error al procesar el pago: {result.message}',
+                    'cliente': None,
+                }
+                return render(request, 'checkout_rapido.html', contexto)
+        except Exception as e:
+            contexto = {
+                'producto': producto,
+                'error_message': f'Error procesando pago: {str(e)}',
+                'cliente': None,
+            }
+            return render(request, 'checkout_rapido.html', contexto)
+    
+    # Buscar o crear cliente
+    cliente_id = request.session.get('cliente_id')
+    cliente = None
+    
+    if cliente_id:
+        try:
+            cliente = Cliente.objects.get(id=cliente_id)
+            # Actualizar datos del cliente
+            cliente.nombre = nombre
+            cliente.apellidos = apellidos
+            cliente.email = email
+            cliente.telefono = telefono
+            cliente.direccion = direccion
+            cliente.ciudad = ciudad
+            cliente.codigo_postal = codigo_postal
+            cliente.save()
+        except Cliente.DoesNotExist:
+            cliente = None
+    
+    # Si no hay cliente o no se encontró, crear uno nuevo como invitado
+    if not cliente:
+        # Verificar si existe un cliente con ese email
+        cliente_existente = Cliente.objects.filter(email=email).first()
+        
+        if cliente_existente:
+            cliente = cliente_existente
+            # Actualizar datos si es necesario
+            cliente.nombre = nombre
+            cliente.apellidos = apellidos
+            cliente.telefono = telefono
+            cliente.direccion = direccion
+            cliente.ciudad = ciudad
+            cliente.codigo_postal = codigo_postal
+            cliente.save()
+        else:
+            # Crear cliente nuevo (invitado)
+            cliente = Cliente.objects.create(
+                nombre=nombre,
+                apellidos=apellidos,
+                email=email,
+                telefono=telefono,
+                direccion=direccion,
+                ciudad=ciudad,
+                codigo_postal=codigo_postal,
+                password=''  # Sin contraseña para invitados
+            )
+        
+        # Guardar en sesión
+        request.session['cliente_id'] = cliente.id
+        request.session['es_invitado'] = True
+    
+    # Calcular totales
+    precio = producto.precio
+    subtotal = (precio * cantidad).quantize(Decimal('0.01'))
+    iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
+    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+    
+    # Crear dirección de envío
+    if tipo_entrega == 'domicilio':
+        direccion_envio = f"{direccion}, {ciudad}, {codigo_postal}"
+    else:
+        direccion_envio = "Recogida en tienda"
+    
+    # Crear el pedido DIRECTAMENTE EN ESTADO CONFIRMADO (sin token)
+    numero_pedido = f"PED-{uuid.uuid4().hex[:8].upper()}"
+    
+    pedido = Pedido.objects.create(
+        cliente=cliente,
+        numero_pedido=numero_pedido,
+        token_confirmacion='',  # Sin token porque ya está confirmado
+        subtotal=subtotal,
+        impuestos=iva,
+        coste_entrega=coste_envio,
+        descuento=Decimal('0.00'),
+        total=total,
+        metodo_pago=metodo_pago,
+        tipo_entrega=tipo_entrega,
+        direccion_envio=direccion_envio,
+        telefono=telefono,
+        estado='confirmado'  # ESTADO CONFIRMADO DIRECTAMENTE
+    )
+    
+    # Crear item del pedido
+    total_item = (precio * cantidad).quantize(Decimal('0.01'))
+    
+    ItemPedido.objects.create(
+        pedido=pedido,
+        producto=producto,
+        cantidad=cantidad,
+        precio_unitario=precio,
+        total=total_item
+    )
+    
+    # REDUCIR STOCK INMEDIATAMENTE
+    producto.stock -= cantidad
+    if producto.stock < 0:
+        producto.stock = 0
+    producto.save()
+    
+    # Enviar email informativo (sin lógica de confirmación)
+    enviar_email_pedido_confirmado_rapido(pedido, request)
+    
+    # Redirigir a confirmación
+    request.session['pedido_confirmado'] = True
+    return redirect('confirmacion_pedido', pedido_id=pedido.id)
+
+def enviar_email_pedido_confirmado_rapido(pedido, request):
+    """Enviar email informativo de pedido confirmado (sin token de confirmación)"""
+    try:
+        from django.core.mail import EmailMultiAlternatives
+        
+        asunto = f'Pedido Confirmado #{pedido.numero_pedido} - Todo Jardin'
+        
+        # Obtener items del pedido
+        items = pedido.items.all()
+        
+        # Crear mensaje HTML
+        mensaje_html = f"""
+        <html>
+        <head>
+            <meta charset="utf-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #4a7c2c;">¡Gracias por tu compra en Todo Jardin!</h2>
+                
+                <p>Hola {pedido.cliente.nombre},</p>
+                
+                <p><strong>Tu pedido ha sido confirmado y está siendo procesado.</strong></p>
+                
+                <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p style="margin: 0; color: #155724;"><strong>✓ Pedido Confirmado</strong><br>
+                    Hemos actualizado nuestro inventario y tu pedido está en proceso de preparación.</p>
+                </div>
+                
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <h3 style="color: #4a7c2c; margin-top: 0;">Resumen del Pedido #{pedido.numero_pedido}</h3>
+                    <p><strong>Fecha:</strong> {pedido.fecha_creacion.strftime('%d/%m/%Y %H:%M')}</p>
+                    <p><strong>Estado:</strong> Confirmado</p>
+                    <p><strong>Método de pago:</strong> {pedido.get_metodo_pago_display()}</p>
+                    <p><strong>Tipo de entrega:</strong> {pedido.get_tipo_entrega_display()}</p>
+                </div>
+                
+                <h3 style="color: #4a7c2c;">Productos:</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: #f5f5f5;">
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #4a7c2c;">Producto</th>
+                            <th style="padding: 10px; text-align: center; border-bottom: 2px solid #4a7c2c;">Cantidad</th>
+                            <th style="padding: 10px; text-align: right; border-bottom: 2px solid #4a7c2c;">Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+        
+        for item in items:
+            mensaje_html += f"""
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{item.producto.nombre}</td>
+                            <td style="padding: 10px; text-align: center; border-bottom: 1px solid #ddd;">{item.cantidad}</td>
+                            <td style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">€{item.total}</td>
+                        </tr>
+            """
+        
+        mensaje_html += f"""
+                    </tbody>
+                </table>
+                
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+                    <p style="margin: 5px 0;"><strong>Subtotal:</strong> €{pedido.subtotal}</p>
+                    <p style="margin: 5px 0;"><strong>IVA (21%):</strong> €{pedido.impuestos}</p>
+                    <p style="margin: 5px 0;"><strong>Envío:</strong> {"GRATIS" if pedido.coste_entrega == 0 else f"€{pedido.coste_entrega}"}</p>
+                    <h3 style="color: #4a7c2c; margin: 10px 0;"><strong>Total:</strong> €{pedido.total}</h3>
+                </div>
+                
+                <h3 style="color: #4a7c2c;">Dirección de envío:</h3>
+                <p>{pedido.direccion_envio}<br>
+                Teléfono: {pedido.telefono}</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <p style="color: #666;">Puedes consultar el estado de tu pedido usando el número:</p>
+                    <p style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; font-size: 1.5rem; font-weight: bold; color: #4a7c2c;">
+                        {pedido.numero_pedido}
+                    </p>
+                </div>
+                
+                <p style="color: #666; font-size: 0.9em; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+                    Este es un mensaje automático, por favor no respondas a este correo.<br>
+                    © 2025 Todo Jardin - Todos los derechos reservados
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        mensaje_texto = f"""
+        ¡Gracias por tu compra en Todo Jardin!
+        
+        Hola {pedido.cliente.nombre},
+        
+        Tu pedido ha sido confirmado y está siendo procesado.
+        
+        Resumen del Pedido #{pedido.numero_pedido}
+        Fecha: {pedido.fecha_creacion.strftime('%d/%m/%Y %H:%M')}
+        Estado: Confirmado
+        
+        Productos:
+        """
+        
+        for item in items:
+            mensaje_texto += f"- {item.producto.nombre} x{item.cantidad} - €{item.total}\n"
+        
+        mensaje_texto += f"""
+        
+        Subtotal: €{pedido.subtotal}
+        IVA (21%): €{pedido.impuestos}
+        Envío: {"GRATIS" if pedido.coste_entrega == 0 else f"€{pedido.coste_entrega}"}
+        Total: €{pedido.total}
+        
+        Dirección de envío:
+        {pedido.direccion_envio}
+        Teléfono: {pedido.telefono}
+        
+        Puedes consultar el estado de tu pedido usando el número: {pedido.numero_pedido}
+        
+        © 2025 Todo Jardin - Todos los derechos reservados
+        """
+        
+        email = EmailMultiAlternatives(
+            subject=asunto,
+            body=mensaje_texto,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[pedido.cliente.email]
+        )
+        
+        email.attach_alternative(mensaje_html, "text/html")
+        email.send(fail_silently=False)
+        
+        print(f"Email informativo enviado a {pedido.cliente.email} para pedido {pedido.numero_pedido}")
+        
+    except Exception as e:
+        print(f"Error enviando email informativo: {e}")
+
 
 # Import admin views
 from .views_admin import (
     admin_panel, admin_pedidos, admin_actualizar_estado_pedido, admin_eliminar_pedido,
-    admin_productos, admin_crear_producto, admin_editar_producto,
+    admin_productos, admin_crear_producto, admin_editar_producto, admin_eliminar_producto,
     admin_usuarios, admin_toggle_admin, admin_eliminar_usuario
 )
+

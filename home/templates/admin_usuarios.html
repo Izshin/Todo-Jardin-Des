@@ -13,13 +13,12 @@
     <nav class="topbar admin-topbar">
         <div class="topbar-container">
             <div class="logo">
-                <a href="{% url 'mainPage' %}">
+                <a href="{% url 'admin_panel' %}">
                     <img src="{% static 'images/Logoadmin.png' %}" alt="Todo Jardin Logo">
                 </a>
-                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+                <h1><a href="{% url 'admin_panel' %}">Todo Jardin</a></h1>
             </div>
             <div class="nav-links">
-                <a href="{% url 'productos' %}">Productos</a>
                 <div class="admin-dropdown">
                     <a href="{% url 'admin_panel' %}" class="admin-link active">Panel de Administración</a>
                     <div class="admin-dropdown-content">
@@ -45,7 +44,12 @@
     <main class="admin-container">
         <h1>Gestión de Usuarios</h1>
         
-        <a href="{% url 'admin_panel' %}" class="btn-back" style="margin-bottom: 1.5rem;">← Volver al Panel</a>
+        <div class="admin-header-actions">
+            <a href="{% url 'admin_panel' %}" class="btn-back">← Volver al Panel</a>
+            <a href="{% url 'admin_crear_usuario' %}" class="btn-primary">
+                + Crear Nuevo Usuario
+            </a>
+        </div>
 
         <div class="admin-table-container">
             <table class="admin-table">
@@ -55,7 +59,6 @@
                         <th>Email</th>
                         <th>Nombre</th>
                         <th>Fecha de Creación</th>
-                        <th>Administrador</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -67,23 +70,15 @@
                         <td>{{ usuario.nombre }} {{ usuario.apellidos }}</td>
                         <td>{{ usuario.fecha_creacion|date:"d/m/Y" }}</td>
                         <td>
-                            {% if usuario.is_admin %}
-                            <span class="estado-badge estado-confirmado">Sí</span>
-                            {% else %}
-                            <span class="estado-badge estado-pendiente">No</span>
-                            {% endif %}
-                        </td>
-                        <td>
                             <div class="action-buttons-container">
                                 {% if usuario.id != cliente_actual_id %}
-                                <form method="POST" action="{% url 'admin_toggle_admin' usuario.id %}" class="admin-toggle-form">
-                                    {% csrf_token %}
-                                    {% if usuario.is_admin %}
-                                    <button type="submit" class="btn-revocar">Revocar Admin</button>
-                                    {% else %}
-                                    <button type="submit" class="btn-otorgar">Hacer Admin</button>
-                                    {% endif %}
-                                </form>
+                                <a href="{% url 'admin_editar_usuario' usuario.id %}" class="btn-admin btn-edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Editar
+                                </a>
                                 <form method="POST" action="{% url 'admin_eliminar_usuario' usuario.id %}" class="delete-form" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este usuario?');">
                                     {% csrf_token %}
                                     <button type="submit" class="btn-delete-small">
@@ -96,7 +91,14 @@
                                     </button>
                                 </form>
                                 {% else %}
-                                <span style="color: #9CA3AF; font-style: italic;">Tú mismo</span>
+                                <a href="{% url 'admin_editar_usuario' usuario.id %}" class="btn-admin btn-edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Editar
+                                </a>
+                                <span style="color: #9CA3AF; font-style: italic; margin-left: auto;">Tú mismo</span>
                                 {% endif %}
                             </div>
                         </td>

@@ -160,10 +160,12 @@
     margin-top: 30px;
     display: flex;
     gap: 15px;
+    flex-wrap: wrap;
 }
 
 .btn-añadir-carrito {
     flex: 1;
+    min-width: 200px;
     padding: 15px;
     background: white;
     color: #4a7c2c;
@@ -186,6 +188,7 @@
 
 .btn-comprar {
     flex: 1;
+    min-width: 200px;
     padding: 15px;
     background: linear-gradient(135deg, #2d5016 0%, #4a7c2c 100%);
     color: white;

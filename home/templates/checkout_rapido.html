@@ -1,0 +1,437 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compra Rápida - Todo Jardin</title>
+    <link rel="stylesheet" href="{% static 'styles/main.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/checkout.css' %}">
+    <script src="https://js.braintreegateway.com/web/dropin/1.43.0/js/dropin.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="topbar">
+        <div class="topbar-container">
+            <div class="logo">
+                <a href="{% url 'mainPage' %}">
+                    <img src="{% static 'images/Logo.png' %}" alt="Todo Jardin Logo">
+                </a>
+                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="{% url 'productos' %}">Productos</a>
+                <a href="{% url 'terminos' %}">Términos y Condiciones</a>
+            </div>
+            <!-- Buscador en navegación -->
+            <div class="search-bar-nav">
+                <form method="GET" action="{% url 'productos' %}" class="search-form-nav">
+                    <input type="text" name="buscar" placeholder="Buscar productos..." class="search-input-nav" value="">
+                    <button type="submit" class="search-btn-nav">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+            <div class="user-circle">
+                <a href="{% url 'user' %}" class="user-link">
+                    <div class="circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                        </svg>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="checkout-container">
+        <h1>Compra Rápida</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 2rem;">Completa tu compra en un solo paso</p>
+
+        <div class="checkout-content">
+            {% if error_message %}
+            <div class="error-banner">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                <div>
+                    <strong>Error</strong>
+                    <p>{{ error_message|safe }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="checkout-form">
+                <form method="POST" action="{% url 'procesar_checkout_rapido' %}" id="checkout-rapido-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="producto_id" value="{{ producto.id }}">
+                    <input type="hidden" name="cantidad" value="1" id="cantidad-input">
+                    
+                    <!-- SECCIÓN 1: Datos Personales -->
+                    <div class="form-section">
+                        <h2>📋 Datos Personales</h2>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="nombre">Nombre *</label>
+                                <input type="text" id="nombre" name="nombre" value="{% if cliente %}{{ cliente.nombre }}{% endif %}" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="apellidos">Apellidos *</label>
+                                <input type="text" id="apellidos" name="apellidos" value="{% if cliente %}{{ cliente.apellidos }}{% endif %}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="email">Email *</label>
+                                <input type="email" id="email" name="email" value="{% if cliente %}{{ cliente.email }}{% endif %}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="telefono">Teléfono de Contacto *</label>
+                                <input type="tel" id="telefono" name="telefono" value="{% if cliente %}{{ cliente.telefono }}{% endif %}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- SECCIÓN 2: Información de Envío -->
+                    <div class="form-section">
+                        <h2>🚚 Información de Envío</h2>
+                        
+                        <!-- Selector de tipo de entrega -->
+                        <div class="form-group">
+                            <label>Método de Entrega *</label>
+                            <div class="entrega-selector">
+                                <label class="entrega-opcion">
+                                    <input type="radio" name="tipo_entrega" value="domicilio" checked>
+                                    <div class="opcion-card">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                        </svg>
+                                        <strong>Entrega a Domicilio</strong>
+                                        <span>Recibe tu pedido en tu dirección</span>
+                                    </div>
+                                </label>
+                                <label class="entrega-opcion">
+                                    <input type="radio" name="tipo_entrega" value="recogida">
+                                    <div class="opcion-card">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M3 3h18v18H3z"></path>
+                                            <path d="M3 9h18"></path>
+                                            <path d="M9 21V9"></path>
+                                        </svg>
+                                        <strong>Recoger en Tienda</strong>
+                                        <span>Recoge en tu tienda más cercana</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Campos de dirección (solo visible para domicilio) -->
+                        <div id="campos-domicilio">
+                            <div class="form-group">
+                                <label for="direccion">Dirección Completa *</label>
+                                <input type="text" id="direccion" name="direccion" 
+                                       value="{% if cliente %}{{ cliente.direccion }}{% endif %}" 
+                                       placeholder="Calle, número, piso, puerta">
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="ciudad">Ciudad *</label>
+                                    <input type="text" id="ciudad" name="ciudad" 
+                                           value="{% if cliente %}{{ cliente.ciudad }}{% endif %}">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="codigo_postal">Código Postal *</label>
+                                    <input type="text" id="codigo_postal" name="codigo_postal" 
+                                           value="{% if cliente %}{{ cliente.codigo_postal }}{% endif %}" 
+                                           pattern="[0-9]{5}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- SECCIÓN 3: Método de Pago -->
+                    <div class="form-section">
+                        <h2>💳 Método de Pago</h2>
+                        
+                        <div class="metodos-pago">
+                            <div class="metodo-pago-opcion">
+                                <input type="radio" id="metodo-tarjeta" name="metodo_pago" value="tarjeta" checked>
+                                <label for="metodo-tarjeta">
+                                    <div class="metodo-icono">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                                        </svg>
+                                    </div>
+                                    <div class="metodo-info">
+                                        <h3>Tarjeta de Crédito/Débito</h3>
+                                        <p>Pago seguro con Braintree</p>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <div class="metodo-pago-opcion">
+                                <input type="radio" id="metodo-reembolso" name="metodo_pago" value="reembolso">
+                                <label for="metodo-reembolso">
+                                    <div class="metodo-icono">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="metodo-info">
+                                        <h3>Contra Reembolso</h3>
+                                        <p>Paga en efectivo al recibir</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Braintree Drop-in UI -->
+                        <div id="braintree-dropin-container" style="margin-top: 1.5rem; display: block;"></div>
+                        
+                        <div class="braintree-info" id="braintree-info" style="display: block;">
+                            <p><strong>Pago seguro procesado por Braintree</strong></p>
+                        </div>
+                        
+                        <div class="reembolso-info" id="reembolso-info" style="display: none; margin-top: 1.5rem;">
+                            <p style="margin: 0; color: #856404;"><strong>ℹ️ Información:</strong> Pagarás en efectivo al recibir tu pedido.</p>
+                        </div>
+                    </div>
+
+                    <div class="form-navigation" style="justify-content: center;">
+                        <button type="submit" class="btn-pagar" id="btn-finalizar">
+                            🛒 Finalizar Compra - €<span id="total-mostrar">{{ total }}</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Resumen del Pedido -->
+            <div class="checkout-resumen">
+                <h2>Resumen del Pedido</h2>
+                
+                <div class="producto-rapido-info">
+                    {% if producto.imagen_principal %}
+                    <img src="{{ producto.imagen_principal.imagen.url }}" alt="{{ producto.nombre }}" class="producto-img-rapido">
+                    {% else %}
+                    <img src="https://via.placeholder.com/100x100/4a7c2c/ffffff?text=Sin+Imagen" alt="{{ producto.nombre }}" class="producto-img-rapido">
+                    {% endif %}
+                    <div class="producto-rapido-detalles">
+                        <h3>{{ producto.nombre }}</h3>
+                        <p class="precio-unitario">€{{ producto.precio }} /ud</p>
+                        <div class="cantidad-selector">
+                            <button type="button" class="btn-cantidad" id="btn-menos">-</button>
+                            <input type="number" value="1" min="1" max="{{ producto.stock }}" id="cantidad-display" readonly>
+                            <button type="button" class="btn-cantidad" id="btn-mas">+</button>
+                        </div>
+                        <p class="stock-disponible">Stock disponible: {{ producto.stock }}</p>
+                    </div>
+                </div>
+
+                <div class="resumen-totales">
+                    <div class="resumen-linea">
+                        <span>Subtotal:</span>
+                        <span id="subtotal-display">€{{ subtotal }}</span>
+                    </div>
+                    <div class="resumen-linea">
+                        <span>IVA (21%):</span>
+                        <span id="iva-display">€{{ iva }}</span>
+                    </div>
+                    <div class="resumen-linea">
+                        <span>Envío:</span>
+                        <span id="envio-display">€{{ coste_envio }}</span>
+                    </div>
+                    <div class="resumen-total">
+                        <span>Total:</span>
+                        <span id="total-display">€{{ total }}</span>
+                    </div>
+                </div>
+                
+                <div class="envio-gratis-banner" id="envio-gratis-banner" style="display: {% if subtotal >= 50 %}block{% else %}none{% endif %};">
+                    <p>🎉 ¡Envío gratis!</p>
+                </div>
+                
+                <div class="envio-falta-banner" id="envio-falta-banner" style="display: {% if subtotal < 50 %}block{% else %}none{% endif %};">
+                    <p>Añade <strong>€<span id="falta-envio-gratis">{{ envio_falta }}</span></strong> para envío gratis</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Precio unitario del producto
+        const precioUnitario = {{ producto.precio }};
+        const stockMaximo = {{ producto.stock }};
+        
+        // Referencias a elementos
+        const cantidadDisplay = document.getElementById('cantidad-display');
+        const cantidadInput = document.getElementById('cantidad-input');
+        const btnMas = document.getElementById('btn-mas');
+        const btnMenos = document.getElementById('btn-menos');
+        
+        // Función para actualizar totales
+        function actualizarTotales() {
+            const cantidad = parseInt(cantidadDisplay.value);
+            
+            // Calcular subtotal
+            const subtotal = (precioUnitario * cantidad).toFixed(2);
+            const iva = (subtotal * 0.21).toFixed(2);
+            const costeEnvio = subtotal >= 50 ? 0 : 5.99;
+            const total = (parseFloat(subtotal) + parseFloat(iva) + costeEnvio).toFixed(2);
+            
+            // Actualizar displays
+            document.getElementById('subtotal-display').textContent = '€' + subtotal;
+            document.getElementById('iva-display').textContent = '€' + iva;
+            document.getElementById('envio-display').textContent = costeEnvio === 0 ? 'GRATIS' : '€' + costeEnvio.toFixed(2);
+            document.getElementById('total-display').textContent = '€' + total;
+            document.getElementById('total-mostrar').textContent = total;
+            
+            // Actualizar banners de envío
+            if (parseFloat(subtotal) >= 50) {
+                document.getElementById('envio-gratis-banner').style.display = 'block';
+                document.getElementById('envio-falta-banner').style.display = 'none';
+            } else {
+                const falta = (50 - parseFloat(subtotal)).toFixed(2);
+                document.getElementById('falta-envio-gratis').textContent = falta;
+                document.getElementById('envio-gratis-banner').style.display = 'none';
+                document.getElementById('envio-falta-banner').style.display = 'block';
+            }
+            
+            // Actualizar input oculto
+            cantidadInput.value = cantidad;
+        }
+        
+        // Botones de cantidad
+        btnMas.addEventListener('click', () => {
+            const valorActual = parseInt(cantidadDisplay.value);
+            if (valorActual < stockMaximo) {
+                cantidadDisplay.value = valorActual + 1;
+                actualizarTotales();
+            }
+        });
+        
+        btnMenos.addEventListener('click', () => {
+            const valorActual = parseInt(cantidadDisplay.value);
+            if (valorActual > 1) {
+                cantidadDisplay.value = valorActual - 1;
+                actualizarTotales();
+            }
+        });
+        
+        // Manejar cambio de tipo de entrega
+        const radiosEntrega = document.querySelectorAll('input[name="tipo_entrega"]');
+        const camposDomicilio = document.getElementById('campos-domicilio');
+        const direccionInput = document.getElementById('direccion');
+        const ciudadInput = document.getElementById('ciudad');
+        const codigoPostalInput = document.getElementById('codigo_postal');
+        
+        radiosEntrega.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'domicilio') {
+                    camposDomicilio.style.display = 'block';
+                    direccionInput.required = true;
+                    ciudadInput.required = true;
+                    codigoPostalInput.required = true;
+                } else {
+                    camposDomicilio.style.display = 'none';
+                    direccionInput.required = false;
+                    ciudadInput.required = false;
+                    codigoPostalInput.required = false;
+                }
+            });
+        });
+        
+        // Manejar cambio de método de pago
+        const metodoTarjeta = document.getElementById('metodo-tarjeta');
+        const metodoReembolso = document.getElementById('metodo-reembolso');
+        const braintreeContainer = document.getElementById('braintree-dropin-container');
+        const braintreeInfo = document.getElementById('braintree-info');
+        const reembolsoInfo = document.getElementById('reembolso-info');
+        
+        let dropinInstance = null;
+        
+        // Inicializar Braintree
+        {% if braintree_client_token %}
+        braintree.dropin.create({
+            authorization: '{{ braintree_client_token }}',
+            container: '#braintree-dropin-container',
+            locale: 'es_ES'
+        }, function (createErr, instance) {
+            if (createErr) {
+                console.error('Error creando Braintree Drop-in:', createErr);
+                return;
+            }
+            dropinInstance = instance;
+        });
+        {% endif %}
+        
+        metodoTarjeta.addEventListener('change', function() {
+            if (this.checked) {
+                braintreeContainer.style.display = 'block';
+                braintreeInfo.style.display = 'block';
+                reembolsoInfo.style.display = 'none';
+            }
+        });
+        
+        metodoReembolso.addEventListener('change', function() {
+            if (this.checked) {
+                braintreeContainer.style.display = 'none';
+                braintreeInfo.style.display = 'none';
+                reembolsoInfo.style.display = 'block';
+            }
+        });
+        
+        // Manejar envío del formulario
+        const form = document.getElementById('checkout-rapido-form');
+        const btnFinalizar = document.getElementById('btn-finalizar');
+        
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const metodoPago = document.querySelector('input[name="metodo_pago"]:checked').value;
+            
+            if (metodoPago === 'tarjeta' && dropinInstance) {
+                btnFinalizar.disabled = true;
+                btnFinalizar.textContent = '⏳ Procesando...';
+                
+                dropinInstance.requestPaymentMethod(function (err, payload) {
+                    if (err) {
+                        console.error('Error obteniendo método de pago:', err);
+                        alert('Error al procesar el pago. Por favor, intenta nuevamente.');
+                        btnFinalizar.disabled = false;
+                        btnFinalizar.textContent = '🛒 Finalizar Compra - €' + document.getElementById('total-mostrar').textContent;
+                        return;
+                    }
+                    
+                    // Añadir nonce al formulario
+                    const nonceInput = document.createElement('input');
+                    nonceInput.type = 'hidden';
+                    nonceInput.name = 'payment_method_nonce';
+                    nonceInput.value = payload.nonce;
+                    form.appendChild(nonceInput);
+                    
+                    // Enviar formulario
+                    form.submit();
+                });
+            } else {
+                // Contra reembolso: enviar directamente
+                form.submit();
+            }
+        });
+    </script>
+</body>
+</html>

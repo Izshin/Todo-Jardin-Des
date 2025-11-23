@@ -199,22 +199,25 @@
                         </div>
                     </div>
 
-                    <!-- Ofertas y Destacados -->
+                    <!-- Rango de Precio -->
                     <div class="filtro-section">
-                        <h3>Especiales</h3>
-                        <div class="checkbox-list">
-                            <label class="checkbox-item">
-                                <input type="checkbox" name="ofertas" value="1"
-                                       {% if mostrar_ofertas %}checked{% endif %}
-                                       onchange="document.getElementById('filtros-form').submit()">
-                                <span>Solo ofertas</span>
-                            </label>
-                            <label class="checkbox-item">
-                                <input type="checkbox" name="destacados" value="1"
-                                       {% if mostrar_destacados %}checked{% endif %}
-                                       onchange="document.getElementById('filtros-form').submit()">
-                                <span>Productos destacados</span>
-                            </label>
+                        <h3>Precio</h3>
+                        <div class="precio-slider-container">
+                            <div class="precio-valores">
+                                <span id="precio-min-label">€{{ precio_min|default:precio_minimo_db }}</span>
+                                <span id="precio-max-label">€{{ precio_max|default:precio_maximo_db }}</span>
+                            </div>
+                            <div class="slider-wrapper">
+                                <div class="slider-track"></div>
+                                <div class="slider-range" id="slider-range"></div>
+                                <input type="range" id="precio-min-slider" name="precio_min" 
+                                       min="{{ precio_minimo_db }}" max="{{ precio_maximo_db }}" 
+                                       value="{{ precio_min|default:precio_minimo_db }}" step="0.01">
+                                <input type="range" id="precio-max-slider" name="precio_max" 
+                                       min="{{ precio_minimo_db }}" max="{{ precio_maximo_db }}" 
+                                       value="{{ precio_max|default:precio_maximo_db }}" step="0.01">
+                            </div>
+                            <button type="button" class="btn-aplicar-precio" onclick="aplicarFiltroPrecio()">Aplicar</button>
                         </div>
                     </div>
 
@@ -234,7 +237,7 @@
                         <p class="resultado-count">{{ productos|length }} productos encontrados</p>
                         
                         <!-- Mostrar filtros activos -->
-                        {% if categorias_seleccionadas or marcas_seleccionadas or buscar or mostrar_ofertas or mostrar_destacados %}
+                        {% if categorias_seleccionadas or marcas_seleccionadas or buscar or precio_min or precio_max %}
                         <div class="filtros-activos">
                             <span class="filtros-label">Filtros activos:</span>
                             
@@ -256,12 +259,10 @@
                             </span>
                             {% endfor %}
                             
-                            {% if mostrar_ofertas %}
-                            <span class="filtro-tag">Ofertas</span>
-                            {% endif %}
-                            
-                            {% if mostrar_destacados %}
-                            <span class="filtro-tag">Destacados</span>
+                            {% if precio_min or precio_max %}
+                            <span class="filtro-tag">
+                                Precio: €{{ precio_min|default:precio_minimo_db }} - €{{ precio_max|default:precio_maximo_db }}
+                            </span>
                             {% endif %}
                         </div>
                         {% endif %}
@@ -284,9 +285,6 @@
                     <div class="producto-card">
                         {% if producto.stock == 0 %}
                         <div class="badge-agotado">AGOTADO</div>
-                        {% endif %}
-                        {% if producto.precio_oferta %}
-                        <div class="badge-oferta">¡OFERTA!</div>
                         {% endif %}
                         {% if producto.es_destacado %}
                         <div class="badge-destacado">⭐ DESTACADO</div>
@@ -315,12 +313,7 @@
                             {% endif %}
 
                             <div class="producto-precios">
-                                {% if producto.precio_oferta %}
-                                <span class="precio-original">€{{ producto.precio }}</span>
-                                <span class="precio-oferta">€{{ producto.precio_oferta }}</span>
-                                {% else %}
                                 <span class="precio">€{{ producto.precio }}</span>
-                                {% endif %}
                             </div>
 
                             <div class="producto-stock">
@@ -333,16 +326,23 @@
 
                             <div class="producto-acciones">
                                 {% if producto.stock > 0 %}
-                                <a href="{% url 'agregar_al_carrito' producto.id %}" class="btn-agregar-carrito">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="9" cy="21" r="1"></circle>
-                                        <circle cx="20" cy="21" r="1"></circle>
-                                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                                    </svg>
-                                    Añadir al Carrito
+                                <a href="{% url 'checkout_rapido' producto.id %}" class="btn-compra-rapida">
+                                    🚀 Compra Rápida
                                 </a>
-                                {% endif %}
+                                <div>
+                                    <a href="{% url 'agregar_al_carrito' producto.id %}" class="btn-agregar-carrito">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="9" cy="21" r="1"></circle>
+                                            <circle cx="20" cy="21" r="1"></circle>
+                                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                        </svg>
+                                        Añadir
+                                    </a>
+                                    <a href="{% url 'producto_detalle' producto.id %}" class="btn-ver-detalle">Ver Detalles</a>
+                                </div>
+                                {% else %}
                                 <a href="{% url 'producto_detalle' producto.id %}" class="btn-ver-detalle">Ver Detalles</a>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -363,10 +363,90 @@
 
     <script>
         function cambiarOrden(orden) {
-            // Actualizar el campo hidden del formulario y enviarlo
-            document.querySelector('input[name="orden"]').value = orden;
+            // Crear URL manualmente sin los parámetros de precio
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+            
+            // Mantener solo categoría, marca, búsqueda y orden
+            const newParams = new URLSearchParams();
+            
+            // Mantener búsqueda
+            if (params.has('buscar')) {
+                newParams.set('buscar', params.get('buscar'));
+            }
+            
+            // Mantener categorías
+            params.getAll('categoria').forEach(cat => {
+                newParams.append('categoria', cat);
+            });
+            
+            // Mantener marcas
+            params.getAll('marca').forEach(marca => {
+                newParams.append('marca', marca);
+            });
+            
+            // Mantener precio solo si no es el rango por defecto
+            const currentMinPrice = params.get('precio_min');
+            const currentMaxPrice = params.get('precio_max');
+            
+            if (currentMinPrice && parseFloat(currentMinPrice) !== minPrice) {
+                newParams.set('precio_min', currentMinPrice);
+            }
+            
+            if (currentMaxPrice && parseFloat(currentMaxPrice) !== maxPrice) {
+                newParams.set('precio_max', currentMaxPrice);
+            }
+            
+            // Añadir nuevo orden
+            newParams.set('orden', orden);
+            
+            // Redirigir con los nuevos parámetros (sin precio_min/precio_max)
+            window.location.href = '{% url "productos" %}?' + newParams.toString();
+        }
+
+        // Configurar sliders de precio
+        const precioMinSlider = document.getElementById('precio-min-slider');
+        const precioMaxSlider = document.getElementById('precio-max-slider');
+        const precioMinLabel = document.getElementById('precio-min-label');
+        const precioMaxLabel = document.getElementById('precio-max-label');
+        const sliderRange = document.getElementById('slider-range');
+
+        const minPrice = parseFloat(precioMinSlider.min);
+        const maxPrice = parseFloat(precioMinSlider.max);
+
+        function actualizarLabels() {
+            let minVal = parseFloat(precioMinSlider.value);
+            let maxVal = parseFloat(precioMaxSlider.value);
+
+            // Asegurar que min no sea mayor que max
+            if (minVal > maxVal) {
+                // Intercambiar valores
+                const temp = maxVal;
+                maxVal = minVal;
+                minVal = temp;
+                precioMinSlider.value = minVal;
+                precioMaxSlider.value = maxVal;
+            }
+
+            precioMinLabel.textContent = '€' + minVal.toFixed(2);
+            precioMaxLabel.textContent = '€' + maxVal.toFixed(2);
+
+            // Actualizar barra de progreso visual
+            const percentMin = ((minVal - minPrice) / (maxPrice - minPrice)) * 100;
+            const percentMax = ((maxVal - minPrice) / (maxPrice - minPrice)) * 100;
+            sliderRange.style.left = percentMin + '%';
+            sliderRange.style.width = (percentMax - percentMin) + '%';
+        }
+
+        precioMinSlider.addEventListener('input', actualizarLabels);
+        precioMaxSlider.addEventListener('input', actualizarLabels);
+
+        function aplicarFiltroPrecio() {
             document.getElementById('filtros-form').submit();
         }
+
+        // Inicializar labels al cargar
+        actualizarLabels();
     </script>
 
 </body>

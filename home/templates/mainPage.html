@@ -234,9 +234,6 @@
                             {% else %}
                                 <img src="https://via.placeholder.com/300x300/4a7c2c/ffffff?text={{ producto.nombre }}" alt="{{ producto.nombre }}">
                             {% endif %}
-                            {% if producto.precio_oferta %}
-                                <span class="badge-oferta">OFERTA</span>
-                            {% endif %}
                             {% if producto.es_destacado %}
                                 <span class="badge-destacado">⭐ DESTACADO</span>
                             {% endif %}
@@ -245,14 +242,7 @@
 
                         <h3>{{ producto.nombre }}</h3>
 
-                        {% if producto.precio_oferta %}
-                            <p class="price">
-                                <span class="precio-original">€{{ producto.precio }}</span>
-                                <span class="precio-oferta">€{{ producto.precio_oferta }}</span>
-                            </p>
-                        {% else %}
-                            <p class="price">€{{ producto.precio }}</p>
-                        {% endif %}
+                        <p class="price">€{{ producto.precio }}</p>
 
                     </a>
                     {% endfor %}

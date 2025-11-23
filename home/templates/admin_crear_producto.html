@@ -13,13 +13,12 @@
     <nav class="topbar admin-topbar">
         <div class="topbar-container">
             <div class="logo">
-                <a href="{% url 'mainPage' %}">
+                <a href="{% url 'admin_panel' %}">
                     <img src="{% static 'images/Logoadmin.png' %}" alt="Todo Jardin Logo">
                 </a>
-                <h1><a href="{% url 'mainPage' %}">Todo Jardin</a></h1>
+                <h1><a href="{% url 'admin_panel' %}">Todo Jardin</a></h1>
             </div>
             <div class="nav-links">
-                <a href="{% url 'productos' %}">Productos</a>
                 <div class="admin-dropdown">
                     <a href="{% url 'admin_panel' %}" class="admin-link active">Panel de Administración</a>
                     <div class="admin-dropdown-content">
@@ -61,13 +60,7 @@
                 
                 <div class="form-group">
                     <label for="precio">Precio (€) *</label>
-                    <input type="number" id="precio" name="precio" step="0.01" min="0" required oninput="validatePrecioOferta()">
-                </div>
-                
-                <div class="form-group">
-                    <label for="precio_oferta">Precio Oferta (€)</label>
-                    <input type="number" id="precio_oferta" name="precio_oferta" step="0.01" min="0" oninput="validatePrecioOferta()">
-                    <small class="form-text" id="precio-error" style="color: #DC2626; display: none;">El precio de oferta debe ser menor que el precio normal</small>
+                    <input type="number" id="precio" name="precio" step="0.01" min="0" required>
                 </div>
                 
                 <div class="form-group">
@@ -77,22 +70,38 @@
                 
                 <div class="form-group">
                     <label for="categoria">Categoría</label>
-                    <select id="categoria" name="categoria">
-                        <option value="">Sin categoría</option>
-                        {% for categoria in categorias %}
-                        <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
-                        {% endfor %}
-                    </select>
+                    <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                        <select id="categoria" name="categoria" style="flex: 1;">
+                            <option value="">Sin categoría</option>
+                            {% for categoria in categorias %}
+                            <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" onclick="toggleNewCategory()" class="btn-new-item">+ Nueva</button>
+                    </div>
+                    <div id="newCategorySection" class="new-category-section" style="display: none;">
+                        <label for="nueva_categoria">Nueva Categoría:</label>
+                        <input type="text" id="nueva_categoria" name="nueva_categoria" placeholder="Nombre de la nueva categoría">
+                        <small style="display: block; margin-top: 0.5rem; color: #1E3A8A;">Si rellenas esto, se creará una nueva categoría</small>
+                    </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="marca">Marca</label>
-                    <select id="marca" name="marca">
-                        <option value="">Sin marca</option>
-                        {% for marca in marcas %}
-                        <option value="{{ marca.id }}">{{ marca.nombre }}</option>
-                        {% endfor %}
-                    </select>
+                    <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                        <select id="marca" name="marca" style="flex: 1;">
+                            <option value="">Sin marca</option>
+                            {% for marca in marcas %}
+                            <option value="{{ marca.id }}">{{ marca.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" onclick="toggleNewBrand()" class="btn-new-item">+ Nueva</button>
+                    </div>
+                    <div id="newBrandSection" class="new-brand-section" style="display: none;">
+                        <label for="nueva_marca">Nueva Marca:</label>
+                        <input type="text" id="nueva_marca" name="nueva_marca" placeholder="Nombre de la nueva marca">
+                        <small style="display: block; margin-top: 0.5rem; color: #1E3A8A;">Si rellenas esto, se creará una nueva marca</small>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -134,18 +143,24 @@
                 reader.readAsDataURL(file);
             }
         }
-
-        function validatePrecioOferta() {
-            const precio = parseFloat(document.getElementById('precio').value);
-            const precioOferta = parseFloat(document.getElementById('precio_oferta').value);
-            const error = document.getElementById('precio-error');
-            
-            if (precioOferta && precio && precioOferta >= precio) {
-                error.style.display = 'block';
-                document.getElementById('precio_oferta').setCustomValidity('El precio de oferta debe ser menor que el precio normal');
+        
+        function toggleNewCategory() {
+            const section = document.getElementById('newCategorySection');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
             } else {
-                error.style.display = 'none';
-                document.getElementById('precio_oferta').setCustomValidity('');
+                section.style.display = 'none';
+                document.getElementById('nueva_categoria').value = '';
+            }
+        }
+        
+        function toggleNewBrand() {
+            const section = document.getElementById('newBrandSection');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+                document.getElementById('nueva_marca').value = '';
             }
         }
     </script>

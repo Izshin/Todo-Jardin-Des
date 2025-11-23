@@ -54,12 +54,6 @@ class ProductoModelTests(TestCase):
         self.assertEqual(self.producto.precio, Decimal('9.99'))
         self.assertEqual(self.producto.stock, 10)
         self.assertTrue(self.producto.esta_disponible)
-    
-    def test_producto_con_oferta(self):
-        """Test producto con precio de oferta"""
-        self.producto.precio_oferta = Decimal('7.99')
-        self.producto.save()
-        self.assertEqual(self.producto.precio_oferta, Decimal('7.99'))
 
 
 class ViewsTests(TestCase):

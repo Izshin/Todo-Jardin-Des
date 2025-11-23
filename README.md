@@ -54,11 +54,18 @@ Accede a `http://127.0.0.1:8000/`
 
 - ✅ Sistema de autenticación (registro, login, perfil, eliminar cuenta)
 - ✅ **Compra rápida sin registro (PB-11)** - Checkout en 3 pasos como invitado
+- ✅ **⚡ Compra Rápida de 1 Click** - Sistema de checkout simplificado sin pasar por el carrito
+  - Botón destacado en listado de productos
+  - Formulario unificado con todos los datos en una sola página
+  - Selector de cantidad con botones +/-
+  - Cálculo dinámico de totales en tiempo real
+  - Pedidos creados directamente como "confirmados"
+  - Email informativo sin necesidad de confirmación posterior
 - ✅ **Búsqueda global (PB-10)** - Barra de búsqueda en todas las páginas
 - ✅ **Rastreador de pedidos** - Sistema de búsqueda de pedidos sin registro
-- ✅ Catálogo de productos con filtros (búsqueda, categoría, marca, ofertas, destacados)
+- ✅ Catálogo de productos con filtros (búsqueda, categoría, marca, **rango de precio con slider dual**)
 - ✅ Detalle de productos con productos relacionados
-- ✅ Productos destacados y en oferta en página principal
+- ✅ Productos destacados en página principal
 - ✅ Carrito de compras (agregar, modificar cantidad, eliminar)
 - ✅ Mini-carrito desplegable en navegación
 - ✅ **Sistema de checkout en 3 pasos reales**
@@ -205,6 +212,8 @@ python manage.py seed
 - `/checkout/paso2/` - Paso 2: Selector de método de pago
 - `/checkout/paso3/` - Paso 3: Confirmación
 - `/procesar-pago/` - Procesamiento de pago (Braintree o reembolso)
+- `/checkout-rapido/<id>/` - **Compra rápida de 1 click** (sin carrito)
+- `/procesar-checkout-rapido/` - Procesamiento de compra rápida
 - `/confirmacion/<id>/` - Confirmación del pedido
 - `/mis-pedidos/` - Historial de pedidos (usuarios registrados)
 - `/buscar-pedido/` - **Rastreador de pedidos público** (sin registro requerido)
@@ -251,7 +260,6 @@ Suite completa de tests unitarios implementada con Django TestCase:
 - ✅ Creación de clientes
 - ✅ Representación string de clientes
 - ✅ Creación de productos
-- ✅ Productos con precio de oferta
 
 #### Tests de Vistas
 - ✅ Página principal carga correctamente
@@ -291,9 +299,53 @@ python manage.py test home.tests.BuscarPedidoTests
 
 ### Resultados
 ```
-Ran 19 tests in 0.172s
+Ran 18 tests in 0.172s
 OK
 ```
+
+## Filtrado de Productos
+
+Sistema completo de filtrado tanto para usuarios como para administradores:
+
+### Filtros de Usuario (`/productos/`)
+- 🔍 **Búsqueda por texto** - Nombre o descripción de productos
+- 🏷️ **Categorías** - Checkboxes para filtrar por categoría
+- 🏢 **Marcas** - Checkboxes para filtrar por marca
+- 💰 **Rango de precio con slider dual** (tema verde):
+  - Slider interactivo de 28px thumbs con gradiente verde
+  - Track de 10px con barra visual de progreso verde
+  - Labels con fondo verde claro mostrando precio min/max
+  - Botón "Aplicar" para ejecutar el filtro
+  - Intercambio automático de valores si min > max
+  - Rango calculado dinámicamente desde la BD
+- 🌟 **Productos destacados** - Checkbox para ver solo destacados
+- 📊 **Ordenamiento** - Por nombre, precio ascendente/descendente
+- 🎯 **Filtros activos** - Badges visuales mostrando filtros aplicados
+
+### Filtros de Administrador (`/admin-panel/productos/`)
+- 🔎 **Búsqueda expandida** - Input más ancho (flex: 2) para nombre/descripción
+- 📦 **Multi-select categorías** - Con scrollbar azul personalizado (gradiente #3B82F6→#2563EB)
+- 🏭 **Multi-select marcas** - Con scrollbar azul personalizado idéntico
+- 💵 **Slider de precio azul** (tema admin):
+  - Dual-range slider de 22px thumbs con gradiente azul (#3B82F6→#2563EB)
+  - Track de 10px con barra visual azul
+  - Labels dinámicos €min y €max actualizados en tiempo real
+  - Sin botón aplicar (filtro automático al cambiar)
+  - Layout en 3 filas: búsqueda/filtros → slider → botones
+  - Max-width 600px para slider (alineado con búsqueda)
+- 🎨 **Botones de acción**:
+  - "Filtrar" (azul) - Aplicar filtros seleccionados
+  - "Limpiar" (rojo) - Resetear todos los filtros
+- 📊 **Estado persistente** - Filtros mantienen valores en URL (GET params)
+
+### Características Técnicas
+- ✅ **Backend eficiente** - Queries con Q objects y agregaciones (Min/Max)
+- ✅ **JavaScript vanilla** - Sin dependencias externas
+- ✅ **Cálculo dinámico** - Rango de precios calculado desde BD en cada carga
+- ✅ **UX optimizada** - Intercambio automático de valores, sin bloqueos de interacción
+- ✅ **Z-index correcto** - Thumbs con z-index: 10, barra visual con pointer-events: none
+- ✅ **Responsive** - Adaptación a diferentes tamaños de pantalla
+- ✅ **Scrollbars personalizados** - 8px de ancho, tema corporativo (verde/azul)
 
 ## Tecnologías Utilizadas
 
@@ -361,6 +413,11 @@ Sistema completo de administración con tema azul consistente:
 - 🎨 **Diseño consistente** - Tema azul (#60A5FA → #3B82F6) en toda la interfaz
 - 🖼️ **Logo personalizado** - LogoAdmin.png en todas las páginas del panel
 - 🎯 **Navegación mejorada** - Dropdown con zona invisible para hover suave
+- 👤 **Perfil de administrador separado** - Vista especial en `/admin-perfil/` con:
+  - Información del administrador (nombre, email, teléfono)
+  - Badge "ADMINISTRADOR" con gradiente azul
+  - Botón destacado "Cerrar Sesión"
+  - Sin opciones de editar perfil o eliminar cuenta
 - 🔵 **Botones estandarizados**:
   - Azul (Primary) - Acciones principales
   - Amarillo (Back) - Volver/Retroceder
@@ -394,17 +451,33 @@ Sistema completo de administración con tema azul consistente:
 
 ### Gestión de Productos (`/admin-panel/productos/`)
 - 📝 **CRUD completo** de productos
+- 🔍 **Sistema de filtrado avanzado**:
+  - Búsqueda por nombre/descripción (barra expandida)
+  - Multi-select de categorías con scrollbar azul personalizado
+  - Multi-select de marcas con scrollbar azul personalizado
+  - **Slider dual de rango de precio** interactivo:
+    - Thumbs de 22px con gradiente azul
+    - Track de 10px con barra de progreso visual
+    - Labels dinámicos mostrando €min y €max
+    - Intercambio automático de valores si min > max
+    - Cálculo automático del rango desde la base de datos
+  - Botón "Filtrar" (azul) y "Limpiar" (rojo) con efectos hover
+  - Layout responsive en 3 filas para óptima usabilidad
 - ➕ **Crear producto** (`/admin-panel/productos/crear/`):
-  - Todos los campos del producto
-  - Validación de precio de oferta < precio normal
+  - Todos los campos del producto (precio único simplificado)
   - Vista previa de imagen al cargar
   - Selección de categoría y marca
+  - **Creación inline de categorías/marcas**: Botones "+ Nueva" junto a selects
   - Checkbox "Es destacado"
 - ✏️ **Editar producto** (`/admin-panel/productos/<id>/editar/`):
   - Mismas funcionalidades que crear
   - Imagen actual visible
   - Vista previa de nueva imagen
-  - Validación en tiempo real
+  - **Creación inline de categorías/marcas** también disponible
+- 🗑️ **Eliminar producto** con confirmación:
+  - Botón de papelera consistente con otras secciones admin
+  - Confirmación JavaScript antes de eliminar
+  - Eliminación en cascada de imágenes asociadas
 - 🖼️ **Gestión de imágenes**:
   - Contenedores de altura fija (280px)
   - Vista previa inmediata con FileReader API
@@ -417,10 +490,16 @@ Sistema completo de administración con tema azul consistente:
 
 ### Gestión de Usuarios (`/admin-panel/usuarios/`)
 - 👥 **Lista de todos los usuarios** con información completa
-- 🔐 **Permisos de administrador**:
-  - Botón "Hacer Admin" (azul) - Otorgar permisos
-  - Botón "Revocar Admin" (rojo) - Quitar permisos
-  - Protección: no se puede auto-modificar
+- ➕ **Crear usuario** (`/admin-panel/usuarios/crear/`):
+  - Formulario completo: email, nombre, apellidos, teléfono, dirección, ciudad, código postal
+  - Validación de email único
+  - Contraseña requerida (mínimo 6 caracteres)
+  - Layout con form-row para campos en línea
+- ✏️ **Editar usuario** (`/admin-panel/usuarios/<id>/editar/`):
+  - Todos los campos editables
+  - Contraseña opcional (mantiene actual si se deja en blanco)
+  - Validación de email único excluyendo usuario actual
+  - Editable incluso para el usuario actual
 - 🗑️ **Eliminar usuarios** con confirmación
   - Protección: no se puede auto-eliminar
   - Icono de papelera con estilo consistente
@@ -429,7 +508,6 @@ Sistema completo de administración con tema azul consistente:
   - Email
   - Nombre completo
   - Fecha de creación
-  - Estado de administrador (badges Sí/No)
 
 ### Estilos y UX
 - 🎨 **Paleta de colores**:
@@ -455,13 +533,66 @@ Sistema completo de administración con tema azul consistente:
 ### Rutas del Panel
 ```python
 /admin-panel/                                    # Dashboard
+/admin-perfil/                                   # Perfil de administrador
 /admin-panel/pedidos/                            # Lista de pedidos
 /admin-panel/pedidos/<id>/estado/                # Cambiar estado
 /admin-panel/pedidos/<id>/eliminar/              # Eliminar pedido
-/admin-panel/productos/                          # Lista de productos
+/admin-panel/productos/                          # Lista de productos (con filtros)
 /admin-panel/productos/crear/                    # Crear producto
 /admin-panel/productos/<id>/editar/              # Editar producto
+/admin-panel/productos/<id>/eliminar/            # Eliminar producto
 /admin-panel/usuarios/                           # Lista de usuarios
-/admin-panel/usuarios/<id>/toggle-admin/         # Cambiar permisos
+/admin-panel/usuarios/crear/                     # Crear usuario
+/admin-panel/usuarios/<id>/editar/               # Editar usuario
 /admin-panel/usuarios/<id>/eliminar/             # Eliminar usuario
 ```
+
+## Compra Rápida (1-Click Checkout)
+
+Sistema de compra simplificado que permite adquirir productos sin pasar por el carrito:
+
+### Características
+- ⚡ **Acceso directo** - Botón "⚡ Compra Rápida" destacado en listado de productos
+- 📋 **Formulario unificado** - Todos los datos en una sola página:
+  - Información personal (nombre, apellidos, email, teléfono)
+  - Tipo de entrega (domicilio/tienda) con SVG icons
+  - Dirección de envío (condicional según tipo de entrega)
+  - Método de pago (tarjeta/contra reembolso)
+- 🔢 **Selector de cantidad** - Botones +/- con validación de stock
+- 💰 **Cálculos dinámicos en tiempo real**:
+  - Subtotal actualizado por cantidad
+  - IVA (21%)
+  - Coste de envío (€5.99 o GRATIS si >€50)
+  - Total final
+  - Banners informativos de envío gratis
+- 🎨 **Diseño consistente** - Tema verde corporativo matching con el sitio
+- 💳 **Integración Braintree** - Drop-in UI para pago seguro con tarjeta
+- ✅ **Pedido inmediato** - Estado "confirmado" desde el inicio
+- 📧 **Email informativo** - Sin token de confirmación, directamente confirmado
+- 📦 **Reducción de stock automática** - Inventario actualizado al confirmar
+
+### Ventajas vs Checkout Normal
+- Sin necesidad de agregar al carrito
+- Un solo paso en lugar de tres
+- Proceso más rápido para compra de un solo producto
+- Ideal para usuarios que saben exactamente qué quieren
+- Perfecto para mobile con menos navegación
+
+### Flujo de Compra Rápida
+1. Usuario hace click en "⚡ Compra Rápida" en producto
+2. Formulario cargado con datos del usuario (si está autenticado)
+3. Selecciona cantidad, tipo de entrega y método de pago
+4. Ve totales actualizados en tiempo real
+5. Click en "Confirmar Pedido"
+6. Pedido creado como "confirmado"
+7. Stock reducido inmediatamente
+8. Email informativo enviado
+9. Redirección a página de confirmación
+
+### Diferencias Técnicas con Checkout Normal
+- **Estado inicial**: `confirmado` vs `pendiente`
+- **Token confirmación**: No se genera (campo vacío)
+- **Email**: Informativo sin botón de confirmar
+- **Stock**: Se reduce inmediatamente, no en confirmación posterior
+- **Carrito**: No involucrado en el proceso
+- **Pasos**: 1 formulario unificado vs 3 pasos secuenciales
