@@ -148,6 +148,61 @@
 .filtro-section h3 {
     color: #333;
     font-size: 1.15rem;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+/* Buscador móvil (oculto por defecto) */
+.search-mobile {
+    display: none;
+}
+
+.search-input-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.search-input-mobile {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.search-input-mobile:focus {
+    outline: none;
+    border-color: #4a7c2c;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(74, 124, 44, 0.1);
+}
+
+.search-btn-mobile {
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #4a7c2c 0%, #5a8f3c 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    min-width: 48px;
+}
+
+.search-btn-mobile:hover {
+    background: linear-gradient(135deg, #3d6621 0%, #4a7c2c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 124, 44, 0.3);
+}
+
+.search-btn-mobile svg {
+    display: block;
+}
     margin-bottom: 18px;
     font-weight: 600;
     display: flex;
@@ -1056,6 +1111,11 @@
 }
 
 @media (max-width: 768px) {
+    /* Mostrar buscador móvil en sidebar */
+    .search-mobile {
+        display: block;
+    }
+
     .page-header h1 {
         font-size: 2rem;
     }
