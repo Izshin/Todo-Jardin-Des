@@ -1103,14 +1103,13 @@ def procesar_pago(request):
         direccion_envio = f"{cliente.direccion}, {cliente.ciudad}, {cliente.codigo_postal}"
         telefono = cliente.telefono
     
-    # Crear el pedido
+    # Crear el pedido DIRECTAMENTE EN ESTADO CONFIRMADO (sin token)
     numero_pedido = f"PED-{uuid.uuid4().hex[:8].upper()}"
-    token_confirmacion = uuid.uuid4().hex
     
     pedido = Pedido.objects.create(
         cliente=cliente,
         numero_pedido=numero_pedido,
-        token_confirmacion=token_confirmacion,
+        token_confirmacion=None,  # NULL porque ya está confirmado
         subtotal=subtotal,
         impuestos=iva,
         coste_entrega=coste_envio,
@@ -1120,10 +1119,10 @@ def procesar_pago(request):
         tipo_entrega=tipo_entrega,
         direccion_envio=direccion_envio,
         telefono=telefono,
-        estado='pendiente'
+        estado='confirmado'  # ESTADO CONFIRMADO DIRECTAMENTE
     )
     
-    # Crear items del pedido (NO reducir stock hasta que se confirme)
+    # Crear items del pedido y REDUCIR STOCK INMEDIATAMENTE
     for item in items:
         precio = item.producto.precio
         total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
@@ -1135,12 +1134,19 @@ def procesar_pago(request):
             precio_unitario=precio,
             total=total_item
         )
+        
+        # REDUCIR STOCK INMEDIATAMENTE
+        producto = item.producto
+        producto.stock -= item.cantidad
+        if producto.stock < 0:
+            producto.stock = 0
+        producto.save()
     
     # Vaciar el carrito
     items.delete()
     
-    # Enviar email de confirmación con enlace para confirmar pedido
-    enviar_email_confirmacion_pedido(pedido, request)
+    # Enviar email informativo (sin lógica de confirmación)
+    enviar_email_pedido_confirmado_rapido(pedido, request)
     
     # Limpiar datos de sesión
     if 'datos_envio' in request.session:
@@ -1149,6 +1155,9 @@ def procesar_pago(request):
         del request.session['metodo_pago']
     if 'payment_method_nonce' in request.session:
         del request.session['payment_method_nonce']
+    
+    # Marcar pedido como confirmado en sesión
+    request.session['pedido_confirmado'] = True
     
     # Redirigir a página de confirmación con el ID del pedido
     return redirect('confirmacion_pedido', pedido_id=pedido.id)
@@ -1996,7 +2005,7 @@ def procesar_checkout_rapido(request):
     pedido = Pedido.objects.create(
         cliente=cliente,
         numero_pedido=numero_pedido,
-        token_confirmacion='',  # Sin token porque ya está confirmado
+        token_confirmacion=None,  # NULL porque ya está confirmado
         subtotal=subtotal,
         impuestos=iva,
         coste_entrega=coste_envio,
