@@ -975,7 +975,7 @@ def checkout_paso3(request):
     items_con_total = []
     
     for item in items:
-        precio = item.producto.precio_oferta if item.producto.precio_oferta else item.producto.precio
+        precio = item.producto.precio
         total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
         subtotal += total_item
         items_con_total.append({
