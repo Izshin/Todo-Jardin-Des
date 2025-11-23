@@ -1,4 +1,4 @@
-# Todo Jardin - Tienda Virtual
+# Todo Jardin - Tienda Virtual WEB: https://jhonpgpi.eu.pythonanywhere.com/
 
 Proyecto de tienda online de jardinería desarrollado en Django.
 
