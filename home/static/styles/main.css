@@ -812,20 +812,25 @@ body {
 /* Responsive Topbar - Mobile */
 @media (max-width: 768px) {
     .topbar {
-        padding: 0 1rem;
+        padding: 0 0.75rem;
     }
 
     .topbar-container {
-        height: 60px;
+        height: 55px;
+        gap: 0.5rem;
+    }
+
+    .logo {
+        gap: 6px;
+        flex-shrink: 0;
     }
 
     .logo img {
-        height: 35px;
+        height: 32px;
     }
 
-    .logo h1 > a,
-    .logo h1 a {
-        font-size: 1.2rem;
+    .logo h1 {
+        display: none; /* Ocultar texto en móvil */
     }
 
     .search-bar-nav {
@@ -833,22 +838,41 @@ body {
     }
 
     .nav-icons {
-        gap: 1rem;
+        gap: 0.75rem;
+        flex-shrink: 0;
     }
 
     .carrito-icon {
-        width: 40px;
-        height: 40px;
+        width: 38px;
+        height: 38px;
+    }
+
+    .carrito-icon svg {
+        width: 22px;
+        height: 22px;
     }
 
     .user-circle .circle {
-        width: 40px;
-        height: 40px;
+        width: 38px;
+        height: 38px;
+    }
+
+    .user-circle svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .carrito-badge {
+        width: 18px;
+        height: 18px;
+        font-size: 0.65rem;
+        top: -4px;
+        right: -4px;
     }
 
     .mini-carrito {
-        width: 280px;
-        right: -50px;
+        width: 300px;
+        right: -20px;
     }
 
     .mini-carrito-item {
@@ -869,16 +893,20 @@ body {
     }
 
     .topbar-container {
-        height: 55px;
+        height: 50px;
+        gap: 0.3rem;
+    }
+
+    .logo {
+        gap: 5px;
     }
 
     .logo img {
-        height: 30px;
+        height: 28px;
     }
 
-    .logo h1 > a,
-    .logo h1 a {
-        font-size: 1rem;
+    .logo h1 {
+        display: none;
     }
 
     .nav-icons {
@@ -890,19 +918,98 @@ body {
         height: 35px;
     }
 
+    .carrito-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
     .user-circle .circle {
         width: 35px;
         height: 35px;
     }
 
-    .carrito-icon svg,
     .user-circle svg {
         width: 20px;
         height: 20px;
     }
 
+    .carrito-badge {
+        width: 16px;
+        height: 16px;
+        font-size: 0.6rem;
+        top: -3px;
+        right: -3px;
+    }
+
     .mini-carrito {
-        width: calc(100vw - 20px);
-        right: -80px;
+        width: calc(100vw - 30px);
+        right: -15px;
+        left: auto;
+    }
+
+    .mini-carrito-header h3 {
+        font-size: 1rem;
+    }
+
+    .mini-carrito-item {
+        padding: 0.75rem;
+    }
+
+    .mini-carrito-item-info h4 {
+        font-size: 0.9rem;
+    }
+
+    .mini-carrito-item-info p {
+        font-size: 0.85rem;
+    }
+
+    .mini-carrito-footer {
+        padding: 0.75rem;
+    }
+
+    .mini-carrito-total {
+        font-size: 1rem;
+    }
+
+    .btn-ver-carrito {
+        padding: 0.6rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* Ajustes adicionales para pantallas muy pequeñas */
+@media (max-width: 360px) {
+    .topbar {
+        padding: 0 0.4rem;
+    }
+
+    .topbar-container {
+        height: 48px;
+    }
+
+    .logo img {
+        height: 26px;
+    }
+
+    .nav-icons {
+        gap: 0.4rem;
+    }
+
+    .carrito-icon,
+    .user-circle .circle {
+        width: 32px;
+        height: 32px;
+    }
+
+    .carrito-icon svg,
+    .user-circle svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .carrito-badge {
+        width: 15px;
+        height: 15px;
+        font-size: 0.55rem;
     }
 }
