@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.db import models
+from django.db.models import Q
 from .models import Cliente, Pedido, Producto, Categoria, Marca, ImagenProducto
 from decimal import Decimal
 
@@ -46,10 +47,29 @@ def admin_pedidos(request):
     except Cliente.DoesNotExist:
         return redirect('login')
     
-    pedidos = Pedido.objects.all().order_by('-fecha_creacion')
+    # Obtener parámetro de búsqueda
+    buscar_pedido = request.GET.get('buscar_pedido', '').strip()
+    
+    # Filtrar pedidos
+    pedidos = Pedido.objects.all()
+    
+    if buscar_pedido:
+        # Normalizar búsqueda: si empieza con "PED-", quitarlo
+        numero_busqueda = buscar_pedido.upper()
+        if numero_busqueda.startswith('PED-'):
+            numero_busqueda = numero_busqueda[4:]
+        
+        # Buscar por número de pedido (con o sin prefijo)
+        pedidos = pedidos.filter(
+            Q(numero_pedido__iexact=numero_busqueda) | 
+            Q(numero_pedido__iexact=f'PED-{numero_busqueda}')
+        )
+    
+    pedidos = pedidos.order_by('-fecha_creacion')
     
     contexto = {
         'pedidos': pedidos,
+        'buscar_pedido': buscar_pedido,
     }
     
     return render(request, 'admin_pedidos.html', contexto)
@@ -399,7 +419,10 @@ def admin_usuarios(request):
     except Cliente.DoesNotExist:
         return redirect('login')
     
-    usuarios = Cliente.objects.all().order_by('-fecha_creacion')
+    # Excluir usuarios invitados (sin contraseña o con nombre 'Invitado')
+    usuarios = Cliente.objects.exclude(
+        Q(password='') | Q(password__isnull=True) | Q(nombre='Invitado')
+    ).order_by('-fecha_creacion')
     
     contexto = {
         'usuarios': usuarios,

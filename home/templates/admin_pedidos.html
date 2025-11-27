@@ -46,6 +46,48 @@
         
         <a href="{% url 'admin_panel' %}" class="btn-back" style="margin-bottom: 1.5rem;">← Volver al Panel</a>
 
+        <!-- Buscador de Pedidos -->
+        <div style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(30, 58, 138, 0.1); margin-bottom: 2rem; border: 2px solid #BFDBFE;">
+            <form method="GET" action="{% url 'admin_pedidos' %}" style="display: flex; gap: 1rem; align-items: flex-end;">
+                <div style="flex: 1;">
+                    <label for="buscar_pedido" style="display: block; color: #1E3A8A; font-weight: 600; margin-bottom: 0.5rem;">Buscar por Número de Pedido</label>
+                    <input 
+                        type="text" 
+                        id="buscar_pedido" 
+                        name="buscar_pedido" 
+                        value="{{ buscar_pedido }}"
+                        placeholder="Ej: PED-27DFAA12 o 27DFAA12"
+                        style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #BFDBFE; border-radius: 8px; font-size: 1rem; transition: all 0.3s ease; background: white;"
+                        onfocus="this.style.borderColor='#2563EB'; this.style.boxShadow='0 0 0 4px rgba(37, 99, 235, 0.15)'"
+                        onblur="this.style.borderColor='#BFDBFE'; this.style.boxShadow='none'"
+                    >
+                </div>
+                <button type="submit" style="background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%); color: #ffffff; padding: 0.75rem 2rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(37, 99, 235, 0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(37, 99, 235, 0.35)'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    Buscar
+                </button>
+                {% if buscar_pedido %}
+                <a href="{% url 'admin_pedidos' %}" style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; display: flex; align-items: center; transition: all 0.3s ease; white-space: nowrap;" onmouseover="this.style.background='linear-gradient(135deg, #e04555, #d63545)'" onmouseout="this.style.background='linear-gradient(135deg, #dc3545, #c82333)'">
+                    Limpiar
+                </a>
+                {% endif %}
+            </form>
+        </div>
+
+        {% if buscar_pedido and not pedidos %}
+        <div style="background: #fee; border-left: 4px solid #e53e3e; padding: 1rem 1.5rem; border-radius: 8px; color: #c53030; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p>No se encontró ningún pedido con el número "{{ buscar_pedido }}"</p>
+        </div>
+        {% endif %}
+
         <div class="admin-table-container">
             <table class="admin-table">
                 <thead>

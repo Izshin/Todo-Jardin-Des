@@ -229,28 +229,6 @@
 
         </div>
 
-        {% if productos_relacionados %}
-        <div class="productos-relacionados">
-            <h2>Productos Relacionados</h2>
-            <div class="relacionados-grid">
-                {% for prod in productos_relacionados %}
-                <div class="producto-card-mini">
-                    {% if prod.imagen_principal %}
-                    <img src="{{ prod.imagen_principal.imagen.url }}" 
-                         alt="{{ prod.nombre }}">
-                    {% else %}
-                    <img src="https://via.placeholder.com/250x250/4a7c2c/ffffff?text={{ prod.nombre }}" 
-                         alt="{{ prod.nombre }}">
-                    {% endif %}
-                    <h4>{{ prod.nombre }}</h4>
-                    <p class="precio-mini">€{{ prod.precio_oferta|default:prod.precio }}</p>
-                    <a href="{% url 'producto_detalle' prod.id %}" class="btn-ver-mini">Ver Producto</a>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
     </div>
 
 </body>
