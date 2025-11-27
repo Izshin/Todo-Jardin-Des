@@ -61,20 +61,6 @@
             </a>
         </div>
 
-        {% if es_invitado %}
-        <div style="background: linear-gradient(135deg, #fff4e6 0%, #ffe0b2 100%); border-left: 4px solid #f39c12; padding: 1.2rem 1.5rem; border-radius: 12px; display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color: #f39c12; flex-shrink: 0; margin-top: 0.2rem;">
-                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="2"></circle>
-                <polygon points="10.8,4 11.6,15.2 12.4,15.2 13.2,4"></polygon>
-                <rect x="11.4" y="17.6" width="1.2" height="1.2"></rect>
-            </svg>
-            <div>
-                <strong style="color: #e67e22; font-size: 1.1rem; display: block; margin-bottom: 0.3rem;">¿Quieres una cuenta en Todo Jardin?</strong>
-                <p style="color: #856404; font-size: 0.95rem; margin: 0; line-height: 1.5;">Crea una contraseña para acceder a tu perfil y gestionar tus pedidos en cualquier momento. <a href="{% url 'establecer_password' %}" style="color: #4a7c2c; font-weight: 600; text-decoration: underline;">Crear Contraseña</a></p>
-            </div>
-        </div>
-        {% endif %}
-
         {% if pedidos_con_items %}
         <div class="pedidos-lista">           {% for data in pedidos_con_items %}
             <div class="pedido-card">

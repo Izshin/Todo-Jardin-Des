@@ -25,6 +25,25 @@ gateway = braintree.BraintreeGateway(
     )
 )
 
+# Email especial para la cuenta de invitado del sistema
+EMAIL_INVITADO_SISTEMA = 'invitado@sistema.local'
+
+def obtener_invitado_sistema():
+    """Obtiene o crea la cuenta de invitado única del sistema"""
+    invitado, created = Cliente.objects.get_or_create(
+        email=EMAIL_INVITADO_SISTEMA,
+        defaults={
+            'nombre': 'Invitado',
+            'apellidos': 'Sistema',
+            'telefono': '000000000',
+            'direccion': 'N/A',
+            'ciudad': 'N/A',
+            'codigo_postal': '00000',
+            'password': ''
+        }
+    )
+    return invitado
+
 def es_usuario_admin(request):
     """Helper para verificar si el usuario actual es administrador"""
     cliente_id = request.session.get('cliente_id')
@@ -131,26 +150,38 @@ def terminos(request):
 def user(request):
     """Redirige a login o perfil dependiendo de si está autenticado"""
     cliente_id = request.session.get('cliente_id')
-    es_invitado = request.session.get('es_invitado', False)
     
     if cliente_id:
-        # Si está autenticado, verificar si es admin
-        if es_usuario_admin(request):
-            return redirect('admin_perfil')
-        else:
-            return redirect('perfil')
+        try:
+            cliente = Cliente.objects.get(id=cliente_id)
+            # Si es invitado, redirigir a login para que se registre
+            es_invitado = request.session.get('es_invitado', False) or cliente.email == EMAIL_INVITADO_SISTEMA
+            if es_invitado:
+                return redirect('login')
+            # Si es admin, ir a panel admin
+            if es_usuario_admin(request):
+                return redirect('admin_perfil')
+            else:
+                return redirect('perfil')
+        except Cliente.DoesNotExist:
+            request.session.flush()
+            return redirect('login')
     else:
-        # Si es invitado sin haber comprado, redirigir a registro
-        if es_invitado:
-            return redirect('registro')
         # Si no está autenticado, ir al login
         return redirect('login')
 
 def login(request):
     """Vista de login"""
-    # Si ya está autenticado, redirigir al perfil
-    if request.session.get('cliente_id'):
-        return redirect('perfil')
+    # Si ya está autenticado como usuario real (no invitado), redirigir al perfil
+    cliente_id = request.session.get('cliente_id')
+    if cliente_id:
+        try:
+            cliente = Cliente.objects.get(id=cliente_id)
+            es_invitado = request.session.get('es_invitado', False) or cliente.email == EMAIL_INVITADO_SISTEMA
+            if not es_invitado:
+                return redirect('perfil')
+        except Cliente.DoesNotExist:
+            pass
     
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -160,19 +191,13 @@ def login(request):
             # Buscar cliente por email
             cliente = Cliente.objects.get(email=email)
             
-            # Verificar si es una cuenta de invitado sin contraseña
-            if not cliente.password or cliente.password == '':
-                contexto = {
-                    'error': 'Esta cuenta fue creada como invitado y aún no tiene contraseña. Por favor, establece una contraseña primero.',
-                    'email': email,
-                    'es_invitado_sin_password': True,
-                }
-                return render(request, 'login.html', contexto)
-            
             # Verificar contraseña
             if cliente.password == password:
                 # Guardar el ID del cliente en la sesión
                 request.session['cliente_id'] = cliente.id
+                # Limpiar flag de invitado si existía
+                if 'es_invitado' in request.session:
+                    del request.session['es_invitado']
                 # Redirigir según tipo de usuario
                 if cliente.is_admin:
                     return redirect('admin_panel')
@@ -195,9 +220,16 @@ def login(request):
 
 def registro(request):
     """Vista de registro"""
-    # Si ya está autenticado, redirigir al perfil
-    if request.session.get('cliente_id'):
-        return redirect('perfil')
+    # Si ya está autenticado como usuario real (no invitado), redirigir al perfil
+    cliente_id = request.session.get('cliente_id')
+    if cliente_id:
+        try:
+            cliente = Cliente.objects.get(id=cliente_id)
+            es_invitado = request.session.get('es_invitado', False) or cliente.email == EMAIL_INVITADO_SISTEMA
+            if not es_invitado:
+                return redirect('perfil')
+        except Cliente.DoesNotExist:
+            pass
     
     if request.method == 'POST':
         # Obtener datos del formulario
@@ -253,6 +285,9 @@ def registro(request):
             
             # Autenticar automáticamente después del registro
             request.session['cliente_id'] = cliente.id
+            # Limpiar flag de invitado si existía
+            if 'es_invitado' in request.session:
+                del request.session['es_invitado']
             return redirect('perfil')
             
         except Exception as e:
@@ -284,6 +319,13 @@ def perfil(request):
         # Si el cliente no existe, cerrar sesión y redirigir al login
         request.session.flush()
         return redirect('login')
+    
+    # Verificar si es invitado (no puede editar perfil)
+    es_invitado = request.session.get('es_invitado', False) or cliente.email == EMAIL_INVITADO_SISTEMA
+    
+    if es_invitado:
+        # Los invitados no pueden editar perfil, redirigir con mensaje
+        return redirect('mainPage')
     
     if request.method == 'POST':
         # Actualizar datos del cliente
@@ -332,12 +374,8 @@ def perfil(request):
             }
             return render(request, 'perfil.html', contexto)
     
-    # Verificar si es invitado sin contraseña
-    es_invitado_sin_password = not cliente.password or cliente.password == ''
-    
     contexto = {
         'cliente': cliente,
-        'es_invitado_sin_password': es_invitado_sin_password
     }
     return render(request, 'perfil.html', contexto)
 
@@ -495,34 +533,54 @@ def carrito(request):
     """Vista del carrito de compras"""
     cliente_id = request.session.get('cliente_id')
     
+    # Si no hay cliente logueado, crear uno temporal para esta sesión
     if not cliente_id:
-        # Permitir ver carrito vacío sin estar logueado
-        return render(request, 'carrito.html', {
-            'items': [],
-            'subtotal': Decimal('0.00'),
-            'iva': Decimal('0.00'),
-            'coste_envio': Decimal('0.00'),
-            'total': Decimal('0.00'),
-            'cliente': None,
-        })
+        # Verificar si ya tiene un carrito_temporal_id en la sesión
+        carrito_temp_id = request.session.get('carrito_temporal_id')
+        if not carrito_temp_id:
+            # Crear cliente temporal para esta sesión específica
+            import uuid
+            temp_email = f'temp_{uuid.uuid4().hex[:12]}@temporal.local'
+            invitado_temp = Cliente.objects.create(
+                nombre='Invitado',
+                apellidos='Temporal',
+                email=temp_email,
+                telefono='000000000',
+                direccion='N/A',
+                ciudad='N/A',
+                codigo_postal='00000',
+                password=''
+            )
+            request.session['cliente_id'] = invitado_temp.id
+            request.session['es_invitado'] = True
+            cliente_id = invitado_temp.id
+        else:
+            cliente_id = carrito_temp_id
+            request.session['cliente_id'] = cliente_id
+            request.session['es_invitado'] = True
     
-    # Verificar si el cliente existe, si no crear uno nuevo invitado
     try:
         cliente = Cliente.objects.get(id=cliente_id)
+        # Si es la cuenta de invitado del sistema, crear uno temporal
+        if cliente.email == EMAIL_INVITADO_SISTEMA:
+            import uuid
+            temp_email = f'temp_{uuid.uuid4().hex[:12]}@temporal.local'
+            invitado_temp = Cliente.objects.create(
+                nombre='Invitado',
+                apellidos='Temporal',
+                email=temp_email,
+                telefono='000000000',
+                direccion='N/A',
+                ciudad='N/A',
+                codigo_postal='00000',
+                password=''
+            )
+            request.session['cliente_id'] = invitado_temp.id
+            request.session['es_invitado'] = True
+            cliente = invitado_temp
     except Cliente.DoesNotExist:
-        # Crear cliente invitado temporal si el anterior fue eliminado
-        cliente = Cliente.objects.create(
-            nombre='Invitado',
-            apellidos='',
-            email='',
-            telefono='',
-            direccion='',
-            ciudad='',
-            codigo_postal='',
-            password=''
-        )
-        request.session['cliente_id'] = cliente.id
-        request.session['es_invitado'] = True
+        request.session.flush()
+        return redirect('mainPage')
     
     # Obtener o crear carrito para el cliente
     carrito_obj, created = Carrito.objects.get_or_create(cliente=cliente)
@@ -561,39 +619,46 @@ def agregar_al_carrito(request, producto_id):
     """Agregar producto al carrito"""
     cliente_id = request.session.get('cliente_id')
     
-    # Si no hay cliente, crear uno de invitado temporal
+    # Si no hay cliente logueado, crear uno temporal para esta sesión
     if not cliente_id:
-        # Crear cliente invitado temporal
-        cliente_invitado = Cliente.objects.create(
+        import uuid
+        temp_email = f'temp_{uuid.uuid4().hex[:12]}@temporal.local'
+        invitado_temp = Cliente.objects.create(
             nombre='Invitado',
-            apellidos='',
-            email='',
-            telefono='',
-            direccion='',
-            ciudad='',
-            codigo_postal='',
+            apellidos='Temporal',
+            email=temp_email,
+            telefono='000000000',
+            direccion='N/A',
+            ciudad='N/A',
+            codigo_postal='00000',
             password=''
         )
-        request.session['cliente_id'] = cliente_invitado.id
+        request.session['cliente_id'] = invitado_temp.id
         request.session['es_invitado'] = True
-        cliente_id = cliente_invitado.id
+        cliente_id = invitado_temp.id
     
-    # Verificar si el cliente existe, si no crear uno nuevo invitado
     try:
         cliente = Cliente.objects.get(id=cliente_id)
+        # Si es la cuenta compartida, crear uno temporal
+        if cliente.email == EMAIL_INVITADO_SISTEMA:
+            import uuid
+            temp_email = f'temp_{uuid.uuid4().hex[:12]}@temporal.local'
+            invitado_temp = Cliente.objects.create(
+                nombre='Invitado',
+                apellidos='Temporal',
+                email=temp_email,
+                telefono='000000000',
+                direccion='N/A',
+                ciudad='N/A',
+                codigo_postal='00000',
+                password=''
+            )
+            request.session['cliente_id'] = invitado_temp.id
+            request.session['es_invitado'] = True
+            cliente = invitado_temp
     except Cliente.DoesNotExist:
-        cliente = Cliente.objects.create(
-            nombre='Invitado',
-            apellidos='',
-            email='',
-            telefono='',
-            direccion='',
-            ciudad='',
-            codigo_postal='',
-            password=''
-        )
-        request.session['cliente_id'] = cliente.id
-        request.session['es_invitado'] = True
+        request.session.flush()
+        return redirect('mainPage')
     
     producto = get_object_or_404(Producto, id=producto_id)
     
@@ -631,38 +696,47 @@ def comprar_ahora(request, producto_id):
     """Agregar producto al carrito y redirigir al carrito para compra inmediata"""
     cliente_id = request.session.get('cliente_id')
     
-    # Si no hay cliente, crear uno de invitado temporal
+    # Si no hay cliente logueado, crear uno temporal para esta sesión
     if not cliente_id:
-        cliente_invitado = Cliente.objects.create(
+        import uuid
+        temp_email = f'temp_{uuid.uuid4().hex[:12]}@temporal.local'
+        invitado_temp = Cliente.objects.create(
             nombre='Invitado',
-            apellidos='',
-            email='',
-            telefono='',
-            direccion='',
-            ciudad='',
-            codigo_postal='',
+            apellidos='Temporal',
+            email=temp_email,
+            telefono='000000000',
+            direccion='N/A',
+            ciudad='N/A',
+            codigo_postal='00000',
             password=''
         )
-        request.session['cliente_id'] = cliente_invitado.id
+        request.session['cliente_id'] = invitado_temp.id
         request.session['es_invitado'] = True
-        cliente_id = cliente_invitado.id
+        cliente_id = invitado_temp.id
     
-    # Verificar si el cliente existe, si no crear uno nuevo invitado
+    # Verificar si el cliente existe
     try:
         cliente = Cliente.objects.get(id=cliente_id)
+        # Si es la cuenta compartida, crear uno temporal
+        if cliente.email == EMAIL_INVITADO_SISTEMA:
+            import uuid
+            temp_email = f'temp_{uuid.uuid4().hex[:12]}@temporal.local'
+            invitado_temp = Cliente.objects.create(
+                nombre='Invitado',
+                apellidos='Temporal',
+                email=temp_email,
+                telefono='000000000',
+                direccion='N/A',
+                ciudad='N/A',
+                codigo_postal='00000',
+                password=''
+            )
+            request.session['cliente_id'] = invitado_temp.id
+            request.session['es_invitado'] = True
+            cliente = invitado_temp
     except Cliente.DoesNotExist:
-        cliente = Cliente.objects.create(
-            nombre='Invitado',
-            apellidos='',
-            email='',
-            telefono='',
-            direccion='',
-            ciudad='',
-            codigo_postal='',
-            password=''
-        )
-        request.session['cliente_id'] = cliente.id
-        request.session['es_invitado'] = True
+        request.session.flush()
+        return redirect('mainPage')
     
     producto = get_object_or_404(Producto, id=producto_id)
     
@@ -731,27 +805,49 @@ def checkout(request):
     """Vista de checkout - Paso 1: Datos de envío"""
     cliente_id = request.session.get('cliente_id')
     
+    # Si no hay cliente, crear uno temporal
     if not cliente_id:
-        return redirect('carrito')
-    
-    # Verificar si el cliente existe, si no crear uno nuevo invitado
-    try:
-        cliente = Cliente.objects.get(id=cliente_id)
-    except Cliente.DoesNotExist:
-        cliente = Cliente.objects.create(
+        import uuid
+        temp_email = f'temp_{uuid.uuid4().hex[:12]}@temporal.local'
+        invitado_temp = Cliente.objects.create(
             nombre='Invitado',
-            apellidos='',
-            email='',
-            telefono='',
-            direccion='',
-            ciudad='',
-            codigo_postal='',
+            apellidos='Temporal',
+            email=temp_email,
+            telefono='000000000',
+            direccion='N/A',
+            ciudad='N/A',
+            codigo_postal='00000',
             password=''
         )
-        request.session['cliente_id'] = cliente.id
+        request.session['cliente_id'] = invitado_temp.id
         request.session['es_invitado'] = True
+        cliente_id = invitado_temp.id
     
-    es_invitado = request.session.get('es_invitado', False)
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+        # Si es la cuenta compartida, crear uno temporal
+        if cliente.email == EMAIL_INVITADO_SISTEMA:
+            import uuid
+            temp_email = f'temp_{uuid.uuid4().hex[:12]}@temporal.local'
+            invitado_temp = Cliente.objects.create(
+                nombre='Invitado',
+                apellidos='Temporal',
+                email=temp_email,
+                telefono='000000000',
+                direccion='N/A',
+                ciudad='N/A',
+                codigo_postal='00000',
+                password=''
+            )
+            request.session['cliente_id'] = invitado_temp.id
+            request.session['es_invitado'] = True
+            cliente = invitado_temp
+    except Cliente.DoesNotExist:
+        request.session.flush()
+        return redirect('mainPage')
+    
+    # Verificar si es invitado
+    es_invitado = request.session.get('es_invitado', False) or cliente.email.endswith('@temporal.local') or cliente.email == EMAIL_INVITADO_SISTEMA
     
     try:
         carrito_obj = Carrito.objects.get(cliente=cliente)
@@ -801,77 +897,21 @@ def checkout_paso2(request):
     
     cliente_id = request.session.get('cliente_id')
     if not cliente_id:
-        return redirect('carrito')
+        invitado = obtener_invitado_sistema()
+        request.session['cliente_id'] = invitado.id
+        request.session['es_invitado'] = True
+        cliente_id = invitado.id
     
-    # Verificar si el cliente existe, si no crear uno nuevo invitado
     try:
         cliente = Cliente.objects.get(id=cliente_id)
     except Cliente.DoesNotExist:
-        cliente = Cliente.objects.create(
-            nombre='Invitado',
-            apellidos='',
-            email='',
-            telefono='',
-            direccion='',
-            ciudad='',
-            codigo_postal='',
-            password=''
-        )
-        request.session['cliente_id'] = cliente.id
-        request.session['es_invitado'] = True
+        request.session.flush()
+        return redirect('mainPage')
     
-    es_invitado = request.session.get('es_invitado', False)
+    # Verificar si es invitado
+    es_invitado = request.session.get('es_invitado', False) or cliente.email == EMAIL_INVITADO_SISTEMA
     
-    # Si es invitado, validar que el email no exista ya en la base de datos
-    if es_invitado:
-        email_invitado = request.POST.get('email', '')
-        
-        # Verificar si ya existe un cliente con ese email (excluyendo el cliente temporal actual)
-        cliente_existente = Cliente.objects.filter(email=email_invitado).exclude(id=cliente_id).first()
-        
-        if cliente_existente:
-            # Si existe, mostrar error y redirigir al checkout
-            try:
-                carrito_obj = Carrito.objects.get(cliente=cliente)
-            except Carrito.DoesNotExist:
-                return redirect('carrito')
-            
-            items = carrito_obj.items.all()
-            
-            # Calcular totales para mostrar en el template
-            subtotal = Decimal('0.00')
-            items_con_total = []
-            
-            for item in items:
-                precio = item.producto.precio
-                total_item = (precio * item.cantidad).quantize(Decimal('0.01'))
-                subtotal += total_item
-                items_con_total.append({
-                    'item': item,
-                    'precio_unitario': precio,
-                    'total': total_item
-                })
-            
-            iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
-            coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
-            total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
-            
-            contexto = {
-                'items': items_con_total,
-                'subtotal': subtotal.quantize(Decimal('0.01')),
-                'iva': iva,
-                'coste_envio': coste_envio,
-                'total': total,
-                'cliente': cliente,
-                'es_invitado': es_invitado,
-                'paso_actual': 1,
-                'error_email': f'El email {email_invitado} ya está registrado. Por favor, <a href="/login/" style="color: #2196f3; text-decoration: underline; font-weight: 600;">inicia sesión</a> con tu cuenta o usa otro email.',
-            }
-            
-            return render(request, 'checkout.html', contexto)
-    
-    # Guardar datos de envío en sesión
-    # Para usuarios registrados, usar los datos del cliente si no vienen en el POST
+    # Guardar datos de envío en sesión, usando datos del cliente como predeterminados
     request.session['datos_envio'] = {
         'nombre': request.POST.get('nombre', '') or cliente.nombre,
         'apellidos': request.POST.get('apellidos', '') or cliente.apellidos,
@@ -882,14 +922,6 @@ def checkout_paso2(request):
         'telefono': request.POST.get('telefono', '') or cliente.telefono,
         'tipo_entrega': request.POST.get('tipo_entrega', 'domicilio'),
     }
-    
-    # Verificar si el cliente existe
-    try:
-        cliente = Cliente.objects.get(id=cliente_id)
-    except Cliente.DoesNotExist:
-        return redirect('carrito')
-    
-    es_invitado = request.session.get('es_invitado', False)
     
     try:
         carrito_obj = Carrito.objects.get(cliente=cliente)
@@ -930,7 +962,6 @@ def checkout_paso2(request):
         'coste_envio': coste_envio,
         'total': total,
         'cliente': cliente,
-        'es_invitado': es_invitado,
         'paso_actual': 2,
         'datos_envio': request.session.get('datos_envio', {}),
         'braintree_client_token': client_token,
@@ -961,7 +992,8 @@ def checkout_paso3(request):
     except Cliente.DoesNotExist:
         return redirect('carrito')
     
-    es_invitado = request.session.get('es_invitado', False)
+    # Verificar si es invitado
+    es_invitado = request.session.get('es_invitado', False) or cliente.email == EMAIL_INVITADO_SISTEMA
     
     try:
         carrito_obj = Carrito.objects.get(cliente=cliente)
@@ -1086,18 +1118,6 @@ def procesar_pago(request):
     tipo_entrega = datos_envio.get('tipo_entrega', 'domicilio')
     metodo_pago = request.session.get('metodo_pago', 'tarjeta')
     
-    # Si es invitado, actualizar sus datos con los de la sesión
-    es_invitado = request.session.get('es_invitado', False)
-    if es_invitado and datos_envio:
-        cliente.nombre = datos_envio.get('nombre', 'Invitado')
-        cliente.apellidos = datos_envio.get('apellidos', '')
-        cliente.email = datos_envio.get('email', '')
-        cliente.telefono = datos_envio.get('telefono', '')
-        cliente.direccion = datos_envio.get('direccion', '')
-        cliente.ciudad = datos_envio.get('ciudad', '')
-        cliente.codigo_postal = datos_envio.get('codigo_postal', '')
-        cliente.save()
-    
     # Construir dirección de envío según tipo de entrega
     if tipo_entrega == 'tienda':
         direccion_envio = "Recogida en tienda"
@@ -1169,20 +1189,21 @@ def confirmacion_pedido(request, pedido_id):
     """Vista de confirmación del pedido"""
     cliente_id = request.session.get('cliente_id')
     
-    # Intentar obtener el pedido sin restricción de cliente para invitados
+    # Intentar obtener el pedido
     try:
         if cliente_id:
             pedido = get_object_or_404(Pedido, id=pedido_id, cliente_id=cliente_id)
+            cliente = Cliente.objects.get(id=cliente_id)
+            # Verificar si fue invitado
+            fue_invitado = request.session.get('es_invitado', False) or cliente.email == EMAIL_INVITADO_SISTEMA
         else:
             # Permitir ver el pedido si acaba de ser creado en esta sesión
             pedido = get_object_or_404(Pedido, id=pedido_id)
+            fue_invitado = True
     except:
         return redirect('mainPage')
     
     items = pedido.items.all()
-    
-    # Verificar si fue invitado antes de limpiar la sesión
-    fue_invitado = request.session.get('es_invitado', False)
     
     contexto = {
         'pedido': pedido,
@@ -1205,8 +1226,8 @@ def historial_pedidos(request):
         request.session.flush()
         return redirect('mainPage')
     
-    # Verificar si es invitado (sin contraseña)
-    es_invitado = request.session.get('es_invitado', False) or not cliente.password or cliente.password == ''
+    # Verificar si es invitado
+    es_invitado = request.session.get('es_invitado', False) or cliente.email == EMAIL_INVITADO_SISTEMA
     
     # Obtener todos los pedidos del cliente ordenados por fecha (más reciente primero)
     pedidos = Pedido.objects.filter(cliente=cliente).order_by('-fecha_creacion')
@@ -1228,79 +1249,6 @@ def historial_pedidos(request):
     }
     
     return render(request, 'historial_pedidos.html', contexto)
-
-def establecer_password(request):
-    """Vista para que invitados establezcan contraseña"""
-    cliente_id = request.session.get('cliente_id')
-    
-    if not cliente_id:
-        return redirect('login')
-    
-    cliente = get_object_or_404(Cliente, id=cliente_id)
-    
-    # Verificar si ya tiene contraseña
-    if cliente.password and cliente.password != '':
-        return redirect('perfil')
-    
-    # Verificar que tenga todos los campos obligatorios
-    campos_vacios = []
-    if not cliente.nombre:
-        campos_vacios.append('Nombre')
-    if not cliente.apellidos:
-        campos_vacios.append('Apellidos')
-    if not cliente.email:
-        campos_vacios.append('Email')
-    if not cliente.telefono:
-        campos_vacios.append('Teléfono')
-    if not cliente.direccion:
-        campos_vacios.append('Dirección')
-    if not cliente.ciudad:
-        campos_vacios.append('Ciudad')
-    if not cliente.codigo_postal:
-        campos_vacios.append('Código Postal')
-    
-    if campos_vacios:
-        contexto = {
-            'cliente': cliente,
-            'error': f'Debes completar todos los campos obligatorios en tu perfil antes de establecer una contraseña. Campos faltantes: {", ".join(campos_vacios)}',
-        }
-        return render(request, 'establecer_password.html', contexto)
-    
-    if request.method == 'POST':
-        password = request.POST.get('password')
-        password_confirm = request.POST.get('password_confirm')
-        
-        if not password or len(password) < 6:
-            contexto = {
-                'cliente': cliente,
-                'error': 'La contraseña debe tener al menos 6 caracteres'
-            }
-            return render(request, 'establecer_password.html', contexto)
-        
-        if password != password_confirm:
-            contexto = {
-                'cliente': cliente,
-                'error': 'Las contraseñas no coinciden'
-            }
-            return render(request, 'establecer_password.html', contexto)
-        
-        # Establecer contraseña
-        cliente.password = password
-        cliente.save()
-        
-        # Limpiar flag de invitado
-        if 'es_invitado' in request.session:
-            del request.session['es_invitado']
-        
-        # Redirigir al perfil con mensaje de éxito
-        request.session['password_establecida'] = True
-        return redirect('perfil')
-    
-    contexto = {
-        'cliente': cliente,
-    }
-    
-    return render(request, 'establecer_password.html', contexto)
 
 def enviar_email_confirmacion(pedido):
     """Enviar email de confirmación del pedido al cliente"""
@@ -1739,7 +1687,6 @@ def confirmar_pedido(request, pedido_id):
             'pedido': pedido,
             'items': items,
             'error': f"Stock insuficiente para: {', '.join(stock_insuficiente)}",
-            'fue_invitado': False,
         }
         return render(request, 'confirmacion_pedido.html', contexto)
     
@@ -1816,9 +1763,16 @@ def checkout_rapido(request, producto_id):
     # Obtener cliente si está autenticado
     cliente_id = request.session.get('cliente_id')
     cliente = None
+    es_invitado = False
+    
     if cliente_id:
         try:
             cliente = Cliente.objects.get(id=cliente_id)
+            # Verificar si es invitado
+            es_invitado = request.session.get('es_invitado', False) or cliente.email == EMAIL_INVITADO_SISTEMA
+            # Si es invitado, no pasar datos del cliente para que no se autorellenen
+            if es_invitado:
+                cliente = None
         except Cliente.DoesNotExist:
             pass
     
@@ -1840,6 +1794,7 @@ def checkout_rapido(request, producto_id):
     contexto = {
         'producto': producto,
         'cliente': cliente,
+        'es_invitado': es_invitado,
         'subtotal': subtotal.quantize(Decimal('0.01')),
         'iva': iva,
         'coste_envio': coste_envio,
@@ -1938,56 +1893,16 @@ def procesar_checkout_rapido(request):
             }
             return render(request, 'checkout_rapido.html', contexto)
     
-    # Buscar o crear cliente
+    # Obtener cliente de la sesión
     cliente_id = request.session.get('cliente_id')
-    cliente = None
     
-    if cliente_id:
-        try:
-            cliente = Cliente.objects.get(id=cliente_id)
-            # Actualizar datos del cliente
-            cliente.nombre = nombre
-            cliente.apellidos = apellidos
-            cliente.email = email
-            cliente.telefono = telefono
-            cliente.direccion = direccion
-            cliente.ciudad = ciudad
-            cliente.codigo_postal = codigo_postal
-            cliente.save()
-        except Cliente.DoesNotExist:
-            cliente = None
+    if not cliente_id:
+        return redirect('login')
     
-    # Si no hay cliente o no se encontró, crear uno nuevo como invitado
-    if not cliente:
-        # Verificar si existe un cliente con ese email
-        cliente_existente = Cliente.objects.filter(email=email).first()
-        
-        if cliente_existente:
-            cliente = cliente_existente
-            # Actualizar datos si es necesario
-            cliente.nombre = nombre
-            cliente.apellidos = apellidos
-            cliente.telefono = telefono
-            cliente.direccion = direccion
-            cliente.ciudad = ciudad
-            cliente.codigo_postal = codigo_postal
-            cliente.save()
-        else:
-            # Crear cliente nuevo (invitado)
-            cliente = Cliente.objects.create(
-                nombre=nombre,
-                apellidos=apellidos,
-                email=email,
-                telefono=telefono,
-                direccion=direccion,
-                ciudad=ciudad,
-                codigo_postal=codigo_postal,
-                password=''  # Sin contraseña para invitados
-            )
-        
-        # Guardar en sesión
-        request.session['cliente_id'] = cliente.id
-        request.session['es_invitado'] = True
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        return redirect('login')
     
     # Calcular totales
     precio = producto.precio

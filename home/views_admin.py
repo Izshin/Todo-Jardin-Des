@@ -419,9 +419,9 @@ def admin_usuarios(request):
     except Cliente.DoesNotExist:
         return redirect('login')
     
-    # Excluir usuarios invitados (sin contraseña o con nombre 'Invitado')
+    # Excluir la cuenta de invitado del sistema y otros invitados antiguos
     usuarios = Cliente.objects.exclude(
-        Q(password='') | Q(password__isnull=True) | Q(nombre='Invitado')
+        Q(email='invitado@sistema.local') | Q(password='') | Q(password__isnull=True) | Q(nombre='Invitado')
     ).order_by('-fecha_creacion')
     
     contexto = {

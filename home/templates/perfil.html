@@ -99,20 +99,6 @@
             </div>
         </div>
 
-        {% if es_invitado_sin_password %}
-        <div style="background: linear-gradient(135deg, #fff4e6 0%, #ffe0b2 100%); border-left: 4px solid #f39c12; padding: 1.2rem 1.5rem; border-radius: 12px; display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color: #f39c12; flex-shrink: 0; margin-top: 0.2rem;">
-                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="2"></circle>
-                <polygon points="10.8,4 11.6,15.2 12.4,15.2 13.2,4"></polygon>
-                <rect x="11.4" y="17.6" width="1.2" height="1.2"></rect>
-            </svg>
-            <div>
-                <strong style="color: #e67e22; font-size: 1.1rem; display: block; margin-bottom: 0.3rem;">¡Crea una contraseña para tu cuenta!</strong>
-                <p style="color: #856404; font-size: 0.95rem; margin: 0; line-height: 1.5;">Tu cuenta fue creada como invitado. Establece una contraseña para proteger tu información y acceder a tu cuenta en cualquier momento. <a href="{% url 'establecer_password' %}" style="color: #4a7c2c; font-weight: 600; text-decoration: underline;">Establecer Contraseña</a></p>
-            </div>
-        </div>
-        {% endif %}
-
         {% if success %}
         <div class="success-message">
             {{ success }}
@@ -167,7 +153,6 @@
                 </div>
             </div>
 
-            {% if not es_invitado_sin_password %}
             <div class="password-section">
                 <h3>Cambiar Contraseña (opcional)</h3>
                 
@@ -188,7 +173,6 @@
                     </div>
                 </div>
             </div>
-            {% endif %}
 
             <button type="submit" class="btn-guardar">Guardar Cambios</button>
 
@@ -198,13 +182,11 @@
             <p><strong>Miembro desde:</strong> {{ cliente.fecha_creacion|date:"d/m/Y" }}</p>
         </div>
 
-        {% if not es_invitado_sin_password %}
         <div class="danger-zone">
             <h3>Zona Peligrosa</h3>
             <p>Una vez que elimines tu cuenta, no hay vuelta atrás. Por favor, asegúrate.</p>
             <button type="button" class="btn-eliminar" onclick="confirmarEliminacion()">Eliminar Cuenta</button>
         </div>
-        {% endif %}
 
     </div>
 

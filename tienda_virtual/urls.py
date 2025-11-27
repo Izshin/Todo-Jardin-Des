@@ -47,7 +47,6 @@ urlpatterns = [
     path('confirmacion/<int:pedido_id>/', views.confirmacion_pedido, name='confirmacion_pedido'),
     path('confirmar-pedido/<int:pedido_id>/', views.confirmar_pedido, name='confirmar_pedido'),
     path('mis-pedidos/', views.historial_pedidos, name='historial_pedidos'),
-    path('establecer-password/', views.establecer_password, name='establecer_password'),
     path('buscar-pedido/', views.buscar_pedido, name='buscar_pedido'),
     
     # Admin URLs

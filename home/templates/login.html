@@ -73,17 +73,7 @@
 
         <h2>Iniciar Sesión</h2>
 
-        {% if es_invitado_sin_password %}
-        <div class="info-invitado">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-            </svg>
-            <div>
-                <p><strong>Esta cuenta fue creada como invitado.</strong></p>
-                <p>Para acceder a tu historial de pedidos, primero debes <a href="{% url 'establecer_password' %}" style="color: #1976d2; text-decoration: underline; font-weight: 600;">establecer una contraseña</a>.</p>
-            </div>
-        </div>
-        {% elif error %}
+        {% if error %}
         <div class="error-message">
             {{ error }}
         </div>
