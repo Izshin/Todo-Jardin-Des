@@ -134,7 +134,8 @@
     font-size: 0.95rem;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
     width: 100%;
     padding: 12px 15px;
     border: 2px solid #e0e0e0;
@@ -143,10 +144,24 @@
     transition: all 0.3s ease;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
     outline: none;
     border-color: #4a7c2c;
     box-shadow: 0 0 0 3px rgba(74, 124, 44, 0.1);
+}
+
+.form-group select {
+    background-color: white;
+    cursor: pointer;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 6px;
+    color: #666;
+    font-size: 0.85rem;
+    font-style: italic;
 }
 
 .form-row {

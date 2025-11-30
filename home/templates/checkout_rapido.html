@@ -75,7 +75,7 @@
                     
                     <!-- SECCIÓN 1: Datos Personales -->
                     <div class="form-section">
-                        <h2>📋 Datos Personales</h2>
+                        <h2>Datos Personales</h2>
                         
                         <div class="form-row">
                             <div class="form-group">
@@ -104,7 +104,7 @@
                     
                     <!-- SECCIÓN 2: Información de Envío -->
                     <div class="form-section">
-                        <h2>🚚 Información de Envío</h2>
+                        <h2>Información de Envío</h2>
                         
                         <!-- Selector de tipo de entrega -->
                         <div class="form-group">
@@ -164,11 +164,11 @@
                     
                     <!-- SECCIÓN 3: Método de Pago -->
                     <div class="form-section">
-                        <h2>💳 Método de Pago</h2>
+                        <h2>Método de Pago</h2>
                         
                         <div class="metodos-pago">
                             <div class="metodo-pago-opcion">
-                                <input type="radio" id="metodo-tarjeta" name="metodo_pago" value="tarjeta" checked>
+                                <input type="radio" id="metodo-tarjeta" name="metodo_pago" value="tarjeta" {% if metodo_pago_favorito == 'tarjeta' %}checked{% endif %}>
                                 <label for="metodo-tarjeta">
                                     <div class="metodo-icono">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -184,7 +184,7 @@
                             </div>
                             
                             <div class="metodo-pago-opcion">
-                                <input type="radio" id="metodo-reembolso" name="metodo_pago" value="reembolso">
+                                <input type="radio" id="metodo-reembolso" name="metodo_pago" value="reembolso" {% if metodo_pago_favorito == 'reembolso' %}checked{% endif %}>
                                 <label for="metodo-reembolso">
                                     <div class="metodo-icono">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -201,20 +201,20 @@
                         </div>
                         
                         <!-- Braintree Drop-in UI -->
-                        <div id="braintree-dropin-container" style="margin-top: 1.5rem; display: block;"></div>
+                        <div id="braintree-dropin-container" style="margin-top: 1.5rem; display: {% if metodo_pago_favorito == 'reembolso' %}none{% else %}block{% endif %};"></div>
                         
-                        <div class="braintree-info" id="braintree-info" style="display: block;">
+                        <div class="braintree-info" id="braintree-info" style="display: {% if metodo_pago_favorito == 'reembolso' %}none{% else %}block{% endif %};">
                             <p><strong>Pago seguro procesado por Braintree</strong></p>
                         </div>
                         
-                        <div class="reembolso-info" id="reembolso-info" style="display: none; margin-top: 1.5rem;">
-                            <p style="margin: 0; color: #856404;"><strong>ℹ️ Información:</strong> Pagarás en efectivo al recibir tu pedido.</p>
+                        <div class="reembolso-info" id="reembolso-info" style="display: {% if metodo_pago_favorito == 'reembolso' %}block{% else %}none{% endif %}; margin-top: 1.5rem;">
+                            <p style="margin: 0; color: #856404;"><strong>Información:</strong> Pagarás en efectivo al recibir tu pedido.</p>
                         </div>
                     </div>
 
                     <div class="form-navigation" style="justify-content: center;">
                         <button type="submit" class="btn-pagar" id="btn-finalizar">
-                            🛒 Finalizar Compra - €<span id="total-mostrar">{{ total }}</span>
+                            Finalizar Compra - €<span id="total-mostrar">{{ total }}</span>
                         </button>
                     </div>
                 </form>
@@ -262,7 +262,7 @@
                 </div>
                 
                 <div class="envio-gratis-banner" id="envio-gratis-banner" style="display: {% if subtotal >= 50 %}block{% else %}none{% endif %};">
-                    <p>🎉 ¡Envío gratis!</p>
+                    <p>¡Envío gratis!</p>
                 </div>
                 
                 <div class="envio-falta-banner" id="envio-falta-banner" style="display: {% if subtotal < 50 %}block{% else %}none{% endif %};">
@@ -406,14 +406,14 @@
             
             if (metodoPago === 'tarjeta' && dropinInstance) {
                 btnFinalizar.disabled = true;
-                btnFinalizar.textContent = '⏳ Procesando...';
+                btnFinalizar.textContent = 'Procesando...';
                 
                 dropinInstance.requestPaymentMethod(function (err, payload) {
                     if (err) {
                         console.error('Error obteniendo método de pago:', err);
                         alert('Error al procesar el pago. Por favor, intenta nuevamente.');
                         btnFinalizar.disabled = false;
-                        btnFinalizar.textContent = '🛒 Finalizar Compra - €' + document.getElementById('total-mostrar').textContent;
+                        btnFinalizar.textContent = 'Finalizar Compra - €' + document.getElementById('total-mostrar').textContent;
                         return;
                     }
                     

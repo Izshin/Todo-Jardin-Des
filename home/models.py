@@ -17,6 +17,11 @@ class Escaparate(models.Model):
 
 
 class Cliente(models.Model):
+    METODO_PAGO_CHOICES = [
+        ('tarjeta', 'Tarjeta de crédito/débito'),
+        ('reembolso', 'Contra reembolso'),
+    ]
+    
     id = models.BigAutoField(primary_key=True)
     nombre = models.CharField(max_length=30)
     apellidos = models.CharField(max_length=100)
@@ -28,6 +33,7 @@ class Cliente(models.Model):
     codigo_postal = models.CharField(max_length=10)
     password = models.CharField(max_length=50)
     is_admin = models.BooleanField(default=False)
+    metodo_pago_favorito = models.CharField(max_length=20, choices=METODO_PAGO_CHOICES, default='tarjeta', blank=True, null=True)
 
     def __str__(self):
         return f"{self.nombre} {self.apellidos}"

@@ -80,7 +80,7 @@
                         <!-- Selector de método de pago -->
                         <div class="metodos-pago">
                             <div class="metodo-pago-opcion">
-                                <input type="radio" id="metodo-tarjeta" name="metodo_pago" value="tarjeta" checked>
+                                <input type="radio" id="metodo-tarjeta" name="metodo_pago" value="tarjeta" {% if metodo_pago_favorito == 'tarjeta' %}checked{% endif %}>
                                 <label for="metodo-tarjeta">
                                     <div class="metodo-icono">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -96,7 +96,7 @@
                             </div>
                             
                             <div class="metodo-pago-opcion">
-                                <input type="radio" id="metodo-reembolso" name="metodo_pago" value="reembolso">
+                                <input type="radio" id="metodo-reembolso" name="metodo_pago" value="reembolso" {% if metodo_pago_favorito == 'reembolso' %}checked{% endif %}>
                                 <label for="metodo-reembolso">
                                     <div class="metodo-icono">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -113,13 +113,13 @@
                         </div>
                         
                         <!-- Braintree Drop-in UI (solo visible con tarjeta) -->
-                        <div id="braintree-dropin-container" style="margin-top: 1.5rem; display: block;"></div>
+                        <div id="braintree-dropin-container" style="margin-top: 1.5rem; display: {% if metodo_pago_favorito == 'reembolso' %}none{% else %}block{% endif %};"></div>
                         
-                        <div class="braintree-info" id="braintree-info" style="display: block;">
+                        <div class="braintree-info" id="braintree-info" style="display: {% if metodo_pago_favorito == 'reembolso' %}none{% else %}block{% endif %};">
                             <p><strong>Pago seguro procesado por Braintree</strong></p>
                         </div>
                         
-                        <div class="reembolso-info" id="reembolso-info" style="display: none; margin-top: 1.5rem;">
+                        <div class="reembolso-info" id="reembolso-info" style="display: {% if metodo_pago_favorito == 'reembolso' %}block{% else %}none{% endif %}; margin-top: 1.5rem;">
                                 <p style="margin: 0; color: #856404;"><strong>ℹ️ Información:</strong> Pagarás en efectivo al recibir tu pedido. El repartidor te entregará el paquete y cobrarás el importe total (€<span id="total-reembolso">{{ total }}</span>).</p>
                         </div>
                     </div>

@@ -257,6 +257,7 @@ def registro(request):
         codigo_postal = request.POST.get('codigo_postal')
         password = request.POST.get('password')
         password_confirm = request.POST.get('password_confirm')
+        metodo_pago_favorito = request.POST.get('metodo_pago_favorito', 'tarjeta')
         
         # Validaciones
         if password != password_confirm:
@@ -295,7 +296,8 @@ def registro(request):
                 direccion=direccion,
                 ciudad=ciudad,
                 codigo_postal=codigo_postal,
-                password=password
+                password=password,
+                metodo_pago_favorito=metodo_pago_favorito
             )
             
             # Autenticar automáticamente después del registro
@@ -351,6 +353,7 @@ def perfil(request):
         cliente.direccion = request.POST.get('direccion')
         cliente.ciudad = request.POST.get('ciudad')
         cliente.codigo_postal = request.POST.get('codigo_postal')
+        cliente.metodo_pago_favorito = request.POST.get('metodo_pago_favorito', cliente.metodo_pago_favorito)
         
         # Cambiar contraseña si se proporcionó
         password_actual = request.POST.get('password_actual')
@@ -918,6 +921,11 @@ def checkout(request):
     coste_envio = calcular_coste_envio(subtotal)
     total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
     
+    # Obtener método de pago favorito si no es invitado
+    metodo_pago_favorito = 'tarjeta'
+    if not es_invitado and hasattr(cliente, 'metodo_pago_favorito') and cliente.metodo_pago_favorito:
+        metodo_pago_favorito = cliente.metodo_pago_favorito
+    
     contexto = {
         'items': items_con_total,
         'subtotal': subtotal.quantize(Decimal('0.01')),
@@ -927,6 +935,7 @@ def checkout(request):
         'cliente': cliente,
         'es_invitado': es_invitado,
         'paso_actual': 1,
+        'metodo_pago_favorito': metodo_pago_favorito,
     }
     
     return render(request, 'checkout.html', contexto)
@@ -996,6 +1005,11 @@ def checkout_paso2(request):
         client_token = None
         print(f"Error generando Braintree token: {e}")
     
+    # Obtener método de pago favorito si no es invitado
+    metodo_pago_favorito = 'tarjeta'
+    if not es_invitado and hasattr(cliente, 'metodo_pago_favorito') and cliente.metodo_pago_favorito:
+        metodo_pago_favorito = cliente.metodo_pago_favorito
+    
     contexto = {
         'items': items_con_total,
         'subtotal': subtotal.quantize(Decimal('0.01')),
@@ -1006,6 +1020,7 @@ def checkout_paso2(request):
         'paso_actual': 2,
         'datos_envio': request.session.get('datos_envio', {}),
         'braintree_client_token': client_token,
+        'metodo_pago_favorito': metodo_pago_favorito,
     }
     
     return render(request, 'checkout_paso2.html', contexto)
@@ -1881,6 +1896,11 @@ def checkout_rapido(request, producto_id):
         client_token = None
         print(f"Error generando Braintree token: {e}")
     
+    # Obtener método de pago favorito si no es invitado
+    metodo_pago_favorito = 'tarjeta'
+    if not es_invitado and hasattr(cliente, 'metodo_pago_favorito') and cliente.metodo_pago_favorito:
+        metodo_pago_favorito = cliente.metodo_pago_favorito
+    
     contexto = {
         'producto': producto,
         'cantidad': cantidad,
@@ -1892,6 +1912,7 @@ def checkout_rapido(request, producto_id):
         'total': total,
         'envio_falta': envio_falta,
         'braintree_client_token': client_token,
+        'metodo_pago_favorito': metodo_pago_favorito,
     }
     
     return render(request, 'checkout_rapido.html', contexto)

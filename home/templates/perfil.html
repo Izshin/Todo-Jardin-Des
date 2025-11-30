@@ -153,6 +153,15 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label for="metodo_pago_favorito">Método de pago preferido</label>
+                <select id="metodo_pago_favorito" name="metodo_pago_favorito">
+                    <option value="tarjeta" {% if cliente.metodo_pago_favorito == 'tarjeta' %}selected{% endif %}>Tarjeta de crédito/débito</option>
+                    <option value="reembolso" {% if cliente.metodo_pago_favorito == 'reembolso' %}selected{% endif %}>Contra reembolso</option>
+                </select>
+                <small>Este método se seleccionará por defecto en tus compras</small>
+            </div>
+
             <div class="password-section">
                 <h3>Cambiar Contraseña (opcional)</h3>
                 
