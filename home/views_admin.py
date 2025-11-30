@@ -98,7 +98,7 @@ def admin_actualizar_estado_pedido(request, pedido_id):
     estado_anterior = pedido.estado
     nuevo_estado = request.POST.get('estado')
     
-    if nuevo_estado in ['pendiente', 'confirmado', 'procesando', 'enviado', 'entregado', 'cancelado']:
+    if nuevo_estado in ['pendiente', 'en_espera_pago', 'confirmado', 'procesando', 'enviado', 'entregado', 'cancelado']:
         pedido.estado = nuevo_estado
         pedido.save()
         
