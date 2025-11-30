@@ -118,8 +118,8 @@
             </span>
           </div>
 
-          {% if subtotal < 50 %}
-            <p class="envio-info">Envío gratis en pedidos superiores a 50€</p>
+          {% if subtotal < config.envio_minimo_gratis %}
+            <p class="envio-info">Envío gratis en pedidos superiores a {{ config.envio_minimo_gratis }}€</p>
           {% endif %}
 
           <hr>

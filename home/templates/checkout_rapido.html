@@ -261,11 +261,11 @@
                     </div>
                 </div>
                 
-                <div class="envio-gratis-banner" id="envio-gratis-banner" style="display: {% if subtotal >= 50 %}block{% else %}none{% endif %};">
+                <div class="envio-gratis-banner" id="envio-gratis-banner" style="display: {% if subtotal >= config.envio_minimo_gratis %}block{% else %}none{% endif %};">
                     <p>¡Envío gratis!</p>
                 </div>
                 
-                <div class="envio-falta-banner" id="envio-falta-banner" style="display: {% if subtotal < 50 %}block{% else %}none{% endif %};">
+                <div class="envio-falta-banner" id="envio-falta-banner" style="display: {% if subtotal < config.envio_minimo_gratis %}block{% else %}none{% endif %};">
                     <p>Añade <strong>€<span id="falta-envio-gratis">{{ envio_falta }}</span></strong> para envío gratis</p>
                 </div>
             </div>
@@ -276,6 +276,10 @@
         // Precio unitario del producto
         const precioUnitario = {{ producto.precio }};
         const stockMaximo = {{ producto.stock }};
+        
+        // Configuración de envío desde el servidor
+        const envioMinimo = {{ config.envio_minimo_gratis }};
+        const costeEnvioEstandar = {{ config.coste_envio_estandar }};
         
         // Referencias a elementos
         const cantidadDisplay = document.getElementById('cantidad-display');
@@ -290,7 +294,7 @@
             // Calcular subtotal
             const subtotal = (precioUnitario * cantidad).toFixed(2);
             const iva = (subtotal * 0.21).toFixed(2);
-            const costeEnvio = subtotal >= 50 ? 0 : 5.99;
+            const costeEnvio = parseFloat(subtotal) >= envioMinimo ? 0 : costeEnvioEstandar;
             const total = (parseFloat(subtotal) + parseFloat(iva) + costeEnvio).toFixed(2);
             
             // Actualizar displays
@@ -301,11 +305,11 @@
             document.getElementById('total-mostrar').textContent = total;
             
             // Actualizar banners de envío
-            if (parseFloat(subtotal) >= 50) {
+            if (parseFloat(subtotal) >= envioMinimo) {
                 document.getElementById('envio-gratis-banner').style.display = 'block';
                 document.getElementById('envio-falta-banner').style.display = 'none';
             } else {
-                const falta = (50 - parseFloat(subtotal)).toFixed(2);
+                const falta = (envioMinimo - parseFloat(subtotal)).toFixed(2);
                 document.getElementById('falta-envio-gratis').textContent = falta;
                 document.getElementById('envio-gratis-banner').style.display = 'none';
                 document.getElementById('envio-falta-banner').style.display = 'block';

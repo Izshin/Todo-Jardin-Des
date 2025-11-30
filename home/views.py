@@ -167,11 +167,12 @@ def mainPage(request):
 
 def terminos(request):
     """Vista para términos y condiciones"""
+    config = ConfiguracionEnvio.get_configuracion()
     contexto = {
-        'cart_info': obtener_info_carrito(request)
+        'cart_info': obtener_info_carrito(request),
+        'config': config,
     }
     return render(request, 'terminos.html', contexto)
-    return HttpResponse(mainPage.render(contexto, request))
 
 def user(request):
     """Redirige a login o perfil dependiendo de si está autenticado"""
@@ -662,6 +663,7 @@ def carrito(request):
     iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))  # 21% IVA
     coste_envio = calcular_coste_envio(subtotal)
     total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+    config = ConfiguracionEnvio.get_configuracion()
     
     contexto = {
         'items': items_con_total,
@@ -670,6 +672,7 @@ def carrito(request):
         'coste_envio': coste_envio,
         'total': total,
         'cliente': cliente,
+        'config': config,
     }
     
     return render(request, 'carrito.html', contexto)
@@ -981,6 +984,7 @@ def checkout(request):
     iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
     coste_envio = calcular_coste_envio(subtotal)
     total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+    config = ConfiguracionEnvio.get_configuracion()
     
     # Obtener método de pago favorito si no es invitado
     metodo_pago_favorito = 'tarjeta'
@@ -997,6 +1001,7 @@ def checkout(request):
         'es_invitado': es_invitado,
         'paso_actual': 1,
         'metodo_pago_favorito': metodo_pago_favorito,
+        'config': config,
     }
     
     return render(request, 'checkout.html', contexto)
@@ -1063,6 +1068,7 @@ def checkout_paso2(request):
     iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
     coste_envio = calcular_coste_envio(subtotal)
     total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+    config = ConfiguracionEnvio.get_configuracion()
     
     # Generar token de cliente para Braintree Drop-in UI
     try:
@@ -1087,6 +1093,7 @@ def checkout_paso2(request):
         'datos_envio': request.session.get('datos_envio', {}),
         'braintree_client_token': client_token,
         'metodo_pago_favorito': metodo_pago_favorito,
+        'config': config,
     }
     
     return render(request, 'checkout_paso2.html', contexto)
@@ -1146,6 +1153,7 @@ def checkout_paso3(request):
     iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
     coste_envio = calcular_coste_envio(subtotal)
     total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
+    config = ConfiguracionEnvio.get_configuracion()
     
     contexto = {
         'items': items_con_total,
@@ -1158,6 +1166,7 @@ def checkout_paso3(request):
         'paso_actual': 3,
         'datos_envio': request.session.get('datos_envio', {}),
         'metodo_pago': request.session.get('metodo_pago', 'tarjeta'),
+        'config': config,
     }
     
     return render(request, 'checkout_paso3.html', contexto)
@@ -2004,6 +2013,7 @@ def checkout_rapido(request, producto_id):
         'envio_falta': envio_falta,
         'braintree_client_token': client_token,
         'metodo_pago_favorito': metodo_pago_favorito,
+        'config': config,
     }
     
     return render(request, 'checkout_rapido.html', contexto)

@@ -7,7 +7,7 @@ Proyecto de tienda online de jardinería desarrollado en Django.
 ### 1. Clonar el repositorio
 ```bash
 git clone <url-del-repo>
-cd PGPI-G2.10
+cd Todo-Jardin
 ```
 
 ### 2. Crear y activar entorno virtual
@@ -41,6 +41,7 @@ Accede a `http://127.0.0.1:8000/`
 
 ## Usuarios de Prueba
 
+### Usuarios Clientes
 - **Email:** maria.garcia@example.com  
   **Contraseña:** password123
 
@@ -50,60 +51,493 @@ Accede a `http://127.0.0.1:8000/`
 - **Email:** ana.lopez@example.com  
   **Contraseña:** password123
 
-## Funcionalidades
+### Usuario Administrador
+- **Email:** admin@todojardin.com  
+  **Contraseña:** admin123
+  **Panel:** `/admin-panel/`
 
-- ✅ Sistema de autenticación (registro, login, perfil, eliminar cuenta)
-- ✅ **Compra rápida sin registro (PB-11)** - Checkout en 3 pasos como invitado
-- ✅ **⚡ Compra Rápida de 1 Click** - Sistema de checkout simplificado sin pasar por el carrito
+## Funcionalidades Principales
+
+### Sistema de Usuarios
+- ✅ **Registro y autenticación completa**
+  - Registro con validación de email único
+  - Login/logout con sesiones
+  - Perfil editable (datos personales, contraseña)
+  - **Preferencia de método de pago** - Guardar tarjeta o contra reembolso como favorito
+  - Eliminar cuenta con confirmación
+  - Separación completa: clientes no acceden a admin, admins no acceden a cliente
+
+### Catálogo y Productos
+- ✅ **Sistema de productos completo**
+  - Productos con imágenes, descripciones, precios, stock
+  - Categorías y marcas organizadas
+  - Productos destacados en homepage
+  - Sistema de imágenes múltiples por producto
+  - Productos relacionados en detalle
+  
+- ✅ **Búsqueda y filtrado avanzado**
+  - Barra de búsqueda global en todas las páginas
+  - Búsqueda por nombre y descripción
+  - Filtros por categorías (múltiples)
+  - Filtros por marcas (múltiples)
+  - **Slider dual de rango de precio** con tema verde corporativo
+  - Filtro de productos destacados
+  - Ordenamiento por nombre y precio
+  - Badges visuales de filtros activos
+
+### Sistema de Compras
+- ✅ **Carrito de compras inteligente**
+  - Mini-carrito desplegable en navegación
+  - Añadir/eliminar productos
+  - Actualizar cantidades
+  - Cálculo automático de totales
+  - Persistencia entre sesiones
+  
+- ✅ **Checkout tradicional en 3 pasos**
+  - **Paso 1:** Datos de envío y tipo de entrega (domicilio/tienda)
+  - **Paso 2:** Método de pago (tarjeta/contra reembolso)
+  - **Paso 3:** Confirmación con resumen completo
+  - Navegación con indicadores de progreso
+  - Datos persistidos en sesión entre pasos
+  
+- ✅ **⚡ Compra Rápida (1-Click)**
   - Botón destacado en listado de productos
-  - Formulario unificado con todos los datos en una sola página
+  - Todo en una sola página (sin pasos)
   - Selector de cantidad con botones +/-
-  - Cálculo dinámico de totales en tiempo real
+  - Cálculos en tiempo real (subtotal, IVA, envío, total)
   - Pedidos creados directamente como "confirmados"
-  - Email informativo sin necesidad de confirmación posterior
-- ✅ **Búsqueda global (PB-10)** - Barra de búsqueda en todas las páginas
-- ✅ **Rastreador de pedidos** - Sistema de búsqueda de pedidos sin registro
-- ✅ Catálogo de productos con filtros (búsqueda, categoría, marca, **rango de precio con slider dual**)
-- ✅ Detalle de productos con productos relacionados
-- ✅ Productos destacados en página principal
-- ✅ Carrito de compras (agregar, modificar cantidad, eliminar)
-- ✅ Mini-carrito desplegable en navegación
-- ✅ **Sistema de checkout en 3 pasos reales**
-  - Paso 1: Información de envío y tipo de entrega (domicilio/tienda)
-  - Paso 2: Método de pago con selector (tarjeta/contra reembolso)
-  - Paso 3: Confirmación del pedido con datos completos
-- ✅ **Integración de Braintree (PB-14)** - Pasarela de pago real
-  - Drop-in UI para entrada segura de tarjetas
+  - Ideal para compras rápidas de un solo producto
+
+- ✅ **Compra sin registro**
+  - Checkout completo como invitado
+  - Creación automática de cuenta temporal
+  - Banner sugerencia para crear cuenta
+  - Sistema de confirmación por email
+
+### Métodos de Pago
+- ✅ **💳 Integración Braintree**
+  - Drop-in UI seguro para tarjetas
   - Tokenización de datos sensibles
-  - Procesamiento real de transacciones
   - Sandbox para pruebas
-- ✅ **Pago contra reembolso (PB-24)** - Opción de pago en efectivo al recibir
-  - Selector de método de pago en checkout paso 2
-  - Sin requerimiento de tarjeta para efectivo
-  - Banner informativo en confirmación
-- ✅ Confirmación de pedidos con resumen completo
-- ✅ **Historial de pedidos** - Vista completa con estados y detalles
-- ✅ **Emails de confirmación UTF-8** - Soporte completo para caracteres españoles (ñ, á, é, etc.)
-- ✅ **Página de Términos y Condiciones** - Información legal y contacto
-- ✅ **Seeder mejorado** - Recarga limpia de imágenes sin duplicados
-- ✅ **Suite de Tests Completa** - 19 tests unitarios con cobertura completa
+  - Procesamiento real de transacciones
+  - **Tarjetas de prueba:**
+    - Visa: 4111 1111 1111 1111
+    - Mastercard: 5555 5555 5555 4444
+    - CVV: cualquier 3 dígitos
+    - Fecha: cualquier fecha futura
 
-## Compra sin Registro (PB-11)
+- ✅ **💰 Pago Contra Reembolso**
+  - Pago en efectivo al recibir
+  - Sin requerimiento de tarjeta
+  - Estado especial "En espera de pago"
+  - Banner informativo diferenciado
+  - **Preferencia guardable** en perfil de usuario
 
-Los usuarios pueden realizar compras sin necesidad de crear una cuenta:
+- ✅ **Método de pago favorito**
+  - Campo en registro y perfil
+  - Auto-selección en checkout normal y rápido
+  - Interfaz Braintree se oculta si favorito es reembolso
+  - Mejora la experiencia en compras recurrentes
 
-1. **Añadir al carrito** - Se crea automáticamente una sesión de invitado
-2. **Paso 1: Datos de envío** - Formulario solicita información personal y de envío
-3. **Paso 2: Método de pago** - Integración con Braintree para pago seguro
-4. **Paso 3: Confirmación** - Revisión final antes de procesar
-5. **Confirmación del pedido** - Pedido completado con número de seguimiento
+### Gestión de Pedidos
+- ✅ **Historial de pedidos** (usuarios registrados)
+  - Lista completa ordenada por fecha
+  - Estados visuales con badges de color
+  - Detalles completos de cada pedido
+  - Resumen financiero
+  - Información de envío y pago
+  
+- ✅ **Rastreador público de pedidos**
+  - Búsqueda sin necesidad de cuenta
+  - Acceso desde homepage
+  - Formatos flexibles (PED-XXXXXX, #PED-XXXXXX, XXXXXX)
+  - Diseño verde corporativo
+  - Información completa del pedido
 
-**Características:**
-- Cliente invitado temporal creado automáticamente
-- Banner informativo sugiere crear cuenta para guardar pedidos
-- Navegación con botón "Volver" entre pasos
-- Indicadores visuales de progreso (1/3, 2/3, 3/3)
-- Datos persistidos en sesión entre pasos
+- ✅ **Estados de pedido**
+  - 🟡 Pendiente
+  - 🟠 En espera de pago (contra reembolso)
+  - 🔵 Confirmado
+  - 🟣 Procesando
+  - 🟪 Enviado
+  - 🟢 Entregado
+  - 🔴 Cancelado
+
+### Comunicaciones
+- ✅ **Sistema de emails UTF-8**
+  - Soporte completo para español (ñ, á, é, etc.)
+  - Confirmaciones de pedido
+  - Emails informativos diferenciados por tipo de pago
+  - Plantillas HTML con diseño corporativo
+
+## Panel de Administración
+
+Sistema completo de gestión con tema azul corporativo:
+
+### Acceso y Seguridad
+- **Ruta:** `/admin-panel/`
+- **Requiere:** Usuario con `is_admin = True`
+- **Separación estricta:** Admins no pueden acceder a vistas de cliente
+- **Auto-redirección:** Intentos de acceso a cliente redirigen a panel admin
+
+### Dashboard Principal
+- 📊 Estadísticas generales
+  - Total de pedidos
+  - Total de productos  
+  - Total de usuarios
+- 🔗 Accesos rápidos a cada sección
+- 🎨 Logo personalizado (LogoAdmin.png)
+- 🖼️ Navegación con dropdown mejorado
+
+### Gestión de Pedidos
+- 📋 Lista completa con información detallada
+- 🏷️ Badges de estado con colores específicos
+- 🔄 Cambio de estado con dropdown
+- 🔍 Búsqueda por número de pedido (con soporte de #)
+- 🗑️ Eliminación con confirmación
+- 📦 Información visible:
+  - Número de pedido
+  - Cliente
+  - Fecha
+  - Total
+  - Estado actual
+  - Método de pago
+
+### Gestión de Productos
+- 📝 CRUD completo
+- 🔍 **Filtrado avanzado:**
+  - Búsqueda por nombre/descripción (barra expandida)
+  - Multi-select de categorías (scrollbar azul)
+  - Multi-select de marcas (scrollbar azul)
+  - **Slider dual de rango de precio**:
+    - Thumbs de 22px con gradiente azul
+    - Barra de progreso visual
+    - Labels dinámicos €min y €max
+    - Intercambio automático de valores
+    - Cálculo desde base de datos
+  - Botones Filtrar (azul) y Limpiar (rojo)
+- ➕ **Crear/Editar producto:**
+  - Todos los campos (precio único simplificado)
+  - Vista previa de imagen
+  - Creación inline de categorías/marcas
+  - Checkbox "Es destacado"
+- 🗑️ Eliminación con confirmación
+
+### Gestión de Usuarios
+- 👥 Lista completa de usuarios
+- ➕ Crear nuevos usuarios
+- ✏️ Editar usuarios (incluso el propio)
+- 🗑️ Eliminar con protección anti-auto-eliminación
+- 👑 Toggle de permisos de administrador
+- 📊 Información visible:
+  - ID, Email, Nombre completo
+  - Estado de administrador
+  - Fecha de creación
+
+### Configuración del Sistema
+- ⚙️ **Configuración de envío**
+  - Coste de envío estándar editable
+  - Monto mínimo para envío gratis
+  - Formulario con validación
+  - Accesible desde dropdown en todas las páginas admin
+
+### Diseño y UX
+- 🎨 **Paleta azul corporativa**
+  - Azul principal: #60A5FA → #3B82F6
+  - Amarillo (volver): #FCD34D → #F59E0B
+  - Rojo (eliminar): #F87171 → #DC2626
+- 🖱️ **Efectos interactivos:**
+  - Transform translateY en hover
+  - Box-shadows con opacidad
+  - Transiciones suaves (0.2s)
+- 📱 Responsive
+- ✨ Confirmaciones JavaScript
+
+## Mejoras Técnicas Recientes
+
+### Eliminación de Campo "Género"
+- ❌ Removido campo inapropiado `genero` de productos
+- ✅ Migración 0009 aplicada
+- ✅ Seed.py actualizado (15 líneas eliminadas)
+- ✅ Templates actualizados
+### Preferencia de Método de Pago
+- ✅ Campo `metodo_pago_favorito` en modelo Cliente
+- ✅ Migración 0010 aplicada
+- ✅ Selector en registro y perfil de usuario
+- ✅ Auto-selección en checkout normal y rápido
+- ✅ Interfaz adaptativa (Braintree se oculta si favorito es reembolso)
+- ✅ Estilos CSS consistentes con la aplicación
+
+### Gestión de Envíos Dinámica
+- ⚙️ Modelo `ConfiguracionEnvio` (singleton)
+- 💰 Coste de envío estándar configurable
+- 🎁 Monto mínimo para envío gratis configurable
+- 👨‍💼 Panel admin para editar configuración
+- 🔗 Enlace en todas las topbars de admin
+- 📦 Cálculo dinámico en checkout
+
+### Mejoras de UI/UX
+- 🎨 CSS mejorado para selectores de método de pago
+- 🚫 Emojis eliminados de checkout rápido (diseño limpio)
+- 🎯 Bloqueo total de acceso de admins a vistas de cliente
+- ↩️ Auto-redirección a panel admin al intentar acceder a cliente
+- 🔍 Búsqueda de pedidos con soporte de prefijo #
+- 🎨 Banners de invitado con tema azul
+- 📱 Responsive en todos los formularios
+
+## Estructura del Proyecto
+
+```
+Todo-Jardin/
+├── home/                          # App principal
+│   ├── models.py                 # Modelos de BD (Cliente, Producto, Pedido, etc.)
+│   ├── views.py                  # Vistas de cliente
+│   ├── views_admin.py            # Vistas de administración
+│   ├── templates/                # HTML templates
+│   │   ├── mainPage.html        # Página principal
+│   │   ├── productos.html       # Catálogo
+│   │   ├── carrito.html         # Carrito
+│   │   ├── checkout*.html       # Proceso de compra
+│   │   ├── perfil.html          # Perfil de usuario
+│   │   ├── admin_*.html         # Páginas del panel admin
+│   │   └── ...
+│   ├── static/                   # Recursos estáticos
+│   │   ├── styles/
+│   │   │   ├── main.css         # Estilos globales (tema verde)
+│   │   │   ├── admin.css        # Estilos del panel (tema azul)
+│   │   │   ├── carrito.css
+│   │   │   ├── checkout.css
+│   │   │   ├── perfil.css
+│   │   │   └── ...
+│   │   └── images/
+│   │       ├── Logo.png         # Logo cliente
+│   │       └── LogoAdmin.png    # Logo admin
+│   ├── migrations/               # Migraciones de BD
+│   │   ├── 0009_remove_producto_genero.py
+│   │   ├── 0010_cliente_metodo_pago_favorito.py
+│   │   └── ...
+│   └── management/
+│       └── commands/
+│           └── seed.py          # Comando para datos de prueba
+├── tienda_virtual/               # Configuración Django
+│   ├── settings.py              # Configuración del proyecto
+│   └── urls.py                  # Rutas principales
+├── media/                        # Archivos subidos (imágenes)
+│   └── productos/
+├── db.sqlite3                    # Base de datos SQLite
+├── manage.py                     # CLI de Django
+└── README.md                     # Este archivo
+```
+
+## Comandos Útiles
+
+```bash
+# Crear migraciones después de cambios en models.py
+python manage.py makemigrations
+
+# Aplicar migraciones
+python manage.py migrate
+
+# Recargar datos de prueba (borra datos existentes)
+python manage.py seed
+
+# Ejecutar servidor de desarrollo
+python manage.py runserver
+
+# Ejecutar tests
+python manage.py test home
+
+# Ejecutar tests con verbosidad
+python manage.py test home --verbosity=2
+```
+
+## Rutas Principales
+
+### Rutas de Cliente
+- `/` - Página principal con productos destacados
+- `/productos/` - Catálogo completo con filtros avanzados
+- `/producto/<id>/` - Detalle de producto con relacionados
+- `/carrito/` - Ver y gestionar carrito
+- `/checkout/` - Paso 1: Información de envío
+- `/checkout/paso2/` - Paso 2: Método de pago
+- `/checkout/paso3/` - Paso 3: Confirmación
+- `/checkout-rapido/<id>/` - Compra rápida de 1 click
+- `/procesar-checkout-rapido/` - Procesamiento de compra rápida
+- `/procesar-pago/` - Procesamiento de pago (Braintree/reembolso)
+- `/confirmacion/<id>/` - Confirmación del pedido
+- `/confirmar-pedido/<id>/` - Confirmación por email (con token)
+- `/mis-pedidos/` - Historial de pedidos (autenticado)
+- `/buscar-pedido/` - Rastreador público de pedidos
+- `/login/` - Iniciar sesión
+- `/registro/` - Crear cuenta
+- `/perfil/` - Perfil de usuario
+- `/logout/` - Cerrar sesión
+- `/terminos/` - Términos y condiciones
+
+### Rutas de Administración
+- `/admin-panel/` - Dashboard principal
+- `/admin-perfil/` - Perfil de administrador
+- `/admin-panel/pedidos/` - Gestión de pedidos
+- `/admin-panel/pedidos/<id>/estado/` - Actualizar estado
+- `/admin-panel/pedidos/<id>/eliminar/` - Eliminar pedido
+- `/admin-panel/productos/` - Gestión de productos
+- `/admin-panel/productos/crear/` - Crear producto
+- `/admin-panel/productos/<id>/editar/` - Editar producto
+- `/admin-panel/productos/<id>/eliminar/` - Eliminar producto
+- `/admin-panel/usuarios/` - Gestión de usuarios
+- `/admin-panel/usuarios/crear/` - Crear usuario
+- `/admin-panel/usuarios/<id>/editar/` - Editar usuario
+- `/admin-panel/usuarios/<id>/toggle-admin/` - Cambiar permisos admin
+- `/admin-panel/usuarios/<id>/eliminar/` - Eliminar usuario
+- `/admin-panel/configuracion-envio/` - Configurar envíos
+
+## Tecnologías y Dependencias
+
+### Backend
+- **Django 5.2** - Framework web principal
+- **Python 3.x** - Lenguaje de programación
+- **SQLite** - Base de datos (desarrollo)
+- **Pillow** - Procesamiento de imágenes
+- **Braintree SDK 4.40.0** - Integración de pagos
+
+### Frontend
+- **HTML5** - Estructura
+- **CSS3** - Estilos con gradientes y animaciones
+- **JavaScript Vanilla** - Interactividad sin dependencias
+- **Braintree Drop-in UI** - Widget de pago
+
+### Características de Seguridad
+- 🔐 CSRF protection en todos los formularios
+- 🔒 Tokenización de tarjetas (Braintree)
+- 🛡️ Validación de permisos en vistas admin
+- 👤 Separación estricta cliente/admin
+- 📧 Confirmación de pedidos por email
+- 🔑 Sesiones Django para autenticación
+
+## Testing
+
+Suite completa de 19 tests unitarios:
+
+### Categorías de Tests
+- **Modelos** - Creación y representación de objetos
+- **Vistas** - Carga correcta de páginas
+- **Carrito** - Operaciones de añadir/ver productos
+- **Búsqueda** - Rastreador de pedidos
+- **Autenticación** - Login, registro, logout
+
+### Ejecutar Tests
+```bash
+# Todos los tests
+python manage.py test home
+
+# Con detalle
+python manage.py test home --verbosity=2
+
+# Tests específicos
+python manage.py test home.tests.ClienteModelTests
+python manage.py test home.tests.BuscarPedidoTests
+```
+
+### Resultados
+```
+Ran 19 tests in 0.172s
+OK
+```
+
+## Configuración de Braintree
+
+### Credenciales Sandbox
+```python
+BRAINTREE_MERCHANT_ID = 'szwzx5mdn5g7p9sg'
+BRAINTREE_PUBLIC_KEY = 'mwxwdwf76j6b5vsh'
+BRAINTREE_PRIVATE_KEY = '11c034c8c8e0eb562a7809dcb0cb1593'
+BRAINTREE_ENVIRONMENT = 'Sandbox'
+```
+
+### Tarjetas de Prueba
+| Tarjeta | Número | CVV | Fecha |
+|---------|--------|-----|-------|
+| Visa | 4111 1111 1111 1111 | Cualquier 3 dígitos | Cualquier fecha futura |
+| Mastercard | 5555 5555 5555 4444 | Cualquier 3 dígitos | Cualquier fecha futura |
+
+## Notas de Desarrollo
+
+### Sistema de Sesiones
+- Datos de checkout persisten entre pasos
+- Método de pago almacenado en sesión
+- Payment nonce de Braintree en sesión temporal
+- Limpieza automática después de completar pedido
+
+### Estados de Pedido y Flujo
+- **Checkout normal (3 pasos):**
+  - Inicial: `pendiente`
+  - Después de email: `confirmado`
+  - Con tarjeta: transacción procesada
+  - Con reembolso: `en_espera_pago`
+
+- **Checkout rápido (1 paso):**
+  - Inicial: `confirmado` (directo)
+  - Stock reducido inmediatamente
+  - No requiere confirmación por email
+
+### Método de Pago Favorito
+- Guardado en campo `Cliente.metodo_pago_favorito`
+- Opciones: `tarjeta` o `reembolso`
+- Auto-selección en checkout paso 2 y checkout rápido
+- Interfaz Braintree se muestra/oculta según preferencia
+- Mejora UX al evitar selección manual en cada compra
+
+### Gestión de Imágenes
+- Directorio `media/productos/` limpiado en cada seed
+- Prevención de duplicados con sufijos auto-generados
+- Descarga fresca desde URLs en cada seed
+- Vista previa con FileReader API en admin
+
+### Sistema de Emails
+- `EmailMultiAlternatives` con UTF-8 explícito
+- Soporte completo para caracteres españoles
+- Plantillas HTML con diseño corporativo
+- Headers Content-Type configurados
+- Diferenciación por tipo de pago
+
+### Seguridad y Permisos
+- Función `bloquear_acceso_admin()` en todas las vistas de cliente
+- Función `es_usuario_admin()` para verificación
+- Auto-redirección de admins a panel
+- Protección contra auto-eliminación de usuarios
+- Validación de email único en registro/edición
+
+## Mejoras Futuras Sugeridas
+
+- [ ] Implementar PostgreSQL para producción
+- [ ] Sistema de reseñas y calificaciones
+- [ ] Wishlist de productos
+- [ ] Cupones y descuentos
+- [ ] Notificaciones por email de cambios de estado
+- [ ] Sistema de devoluciones
+- [ ] Integración con API de envíos
+- [ ] Dashboard de analytics para admin
+- [ ] Exportación de reportes (PDF/Excel)
+- [ ] Multi-idioma (i18n)
+- [ ] PWA con funcionalidad offline
+- [ ] Recuperación de contraseña
+- [ ] Verificación de email en registro
+
+## Soporte y Contacto
+
+- **Email:** todojardin@example.com
+- **Teléfono:** +34 123 456 789
+- **Dirección:** Calle Ejemplo 123, 41001 Sevilla, España
+
+## Licencia
+
+Este proyecto es software educativo desarrollado para fines académicos.
+
+---
+
+**Última actualización:** Noviembre 2025  
+**Versión:** 2.0  
+**Desarrolladores:** Equipo Todo Jardin
 
 ## Integración de Braintree (PB-14)
 
