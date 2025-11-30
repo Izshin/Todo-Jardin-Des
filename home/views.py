@@ -70,6 +70,12 @@ def es_usuario_admin(request):
             pass
     return False
 
+def bloquear_acceso_admin(request):
+    """Redirigir a admin panel si el usuario es administrador"""
+    if es_usuario_admin(request):
+        return redirect('admin_panel')
+    return None
+
 def obtener_cantidad_carrito(request):
     """Helper para obtener la cantidad de items en el carrito"""
     cliente_id = request.session.get('cliente_id')
@@ -140,6 +146,11 @@ def index(request):
     return HttpResponse(plantilla.render(contexto, request))
 
 def mainPage(request):
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     # Obtener productos destacados
     productos_destacados = Producto.objects.filter(
         es_destacado=True
@@ -235,6 +246,11 @@ def login(request):
 
 def registro(request):
     """Vista de registro"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     # Si ya está autenticado como usuario real (no invitado), redirigir al perfil
     cliente_id = request.session.get('cliente_id')
     if cliente_id:
@@ -325,6 +341,11 @@ def registro(request):
 
 def perfil(request):
     """Vista del perfil de usuario"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     cliente_id = request.session.get('cliente_id')
     
     if not cliente_id:
@@ -427,6 +448,11 @@ def logout(request):
 
 def eliminar_cuenta(request):
     """Eliminar cuenta de usuario"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     cliente_id = request.session.get('cliente_id')
     
     if not cliente_id:
@@ -443,6 +469,11 @@ def eliminar_cuenta(request):
 
 def productos(request):
     """Vista de listado de productos con filtros múltiples"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     from django.db.models import Q
     
     # Obtener todos los productos disponibles
@@ -530,6 +561,11 @@ def productos(request):
 
 def producto_detalle(request, producto_id):
     """Vista de detalle de un producto"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     producto = get_object_or_404(Producto, id=producto_id)
     
     # Obtener productos relacionados de la misma categoría
@@ -549,6 +585,11 @@ def producto_detalle(request, producto_id):
 
 def carrito(request):
     """Vista del carrito de compras"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     cliente_id = request.session.get('cliente_id')
     
     # Si no hay cliente logueado, crear uno temporal para esta sesión
@@ -635,6 +676,11 @@ def carrito(request):
 
 def agregar_al_carrito(request, producto_id):
     """Agregar producto al carrito"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     cliente_id = request.session.get('cliente_id')
     
     # Obtener la cantidad del parámetro GET (por defecto 1)
@@ -811,6 +857,11 @@ def comprar_ahora(request, producto_id):
 
 def actualizar_cantidad_carrito(request, item_id):
     """Actualizar cantidad de un item del carrito"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     if request.method == 'POST':
         cliente_id = request.session.get('cliente_id')
         
@@ -835,6 +886,11 @@ def actualizar_cantidad_carrito(request, item_id):
 
 def eliminar_del_carrito(request, item_id):
     """Eliminar item del carrito"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     cliente_id = request.session.get('cliente_id')
     
     if not cliente_id:
@@ -847,6 +903,11 @@ def eliminar_del_carrito(request, item_id):
 
 def checkout(request):
     """Vista de checkout - Paso 1: Datos de envío"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     cliente_id = request.session.get('cliente_id')
     
     # Si no hay cliente, crear uno temporal
@@ -942,6 +1003,11 @@ def checkout(request):
 
 def checkout_paso2(request):
     """Paso 2: Guardar datos de envío y mostrar métodos de pago"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     if request.method != 'POST':
         return redirect('checkout')
     
@@ -1027,6 +1093,11 @@ def checkout_paso2(request):
 
 def checkout_paso3(request):
     """Paso 3: Confirmar pedido antes de procesar pago"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     if request.method != 'POST':
         return redirect('checkout')
     
@@ -1274,6 +1345,11 @@ def confirmacion_pedido(request, pedido_id):
 
 def historial_pedidos(request):
     """Vista del historial de pedidos del cliente"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     cliente_id = request.session.get('cliente_id')
     
     if not cliente_id:
@@ -1712,6 +1788,11 @@ def enviar_email_pedido_confirmado(pedido):
 
 def confirmar_pedido(request, pedido_id):
     """Confirmar pedido mediante token de email y actualizar stock"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     # Obtener token de la URL
     token = request.GET.get('token')
     
@@ -1778,6 +1859,11 @@ def confirmar_pedido(request, pedido_id):
 
 def buscar_pedido(request):
     """Vista para buscar pedidos por número sin estar registrado"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     pedido_encontrado = None
     error = None
     
@@ -1813,6 +1899,11 @@ def buscar_pedido(request):
 
 def checkout_rapido(request, producto_id):
     """Vista de checkout rápido - Todo en un solo paso"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     producto = get_object_or_404(Producto, id=producto_id)
     
     # Obtener la cantidad del parámetro GET (por defecto 1)
@@ -1919,6 +2010,11 @@ def checkout_rapido(request, producto_id):
 
 def procesar_checkout_rapido(request):
     """Procesar compra rápida - Crear pedido directamente en estado confirmado"""
+    # Bloquear acceso de administradores
+    admin_redirect = bloquear_acceso_admin(request)
+    if admin_redirect:
+        return admin_redirect
+    
     if request.method != 'POST':
         return redirect('productos')
     
