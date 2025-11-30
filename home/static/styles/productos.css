@@ -956,6 +956,96 @@
     margin-top: auto;
 }
 
+/* Selector de cantidad en grid de productos */
+.cantidad-selector-grid {
+    background: linear-gradient(135deg, #ffffff, #f8faf7);
+    padding: 12px;
+    border-radius: 10px;
+    border: 2px solid #e8f5e0;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 6px rgba(74, 124, 44, 0.08);
+}
+
+.cantidad-selector-grid label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #2d5016;
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: 0.3px;
+}
+
+.cantidad-controls-grid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    box-shadow: 0 2px 8px rgba(45, 80, 22, 0.12);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.btn-cantidad-grid {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #4a7c2c 0%, #6ba83e 100%);
+    color: white;
+    border: none;
+    font-size: 1.4rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.btn-cantidad-grid:first-child {
+    border-radius: 8px 0 0 8px;
+}
+
+.btn-cantidad-grid:last-child {
+    border-radius: 0 8px 8px 0;
+}
+
+.btn-cantidad-grid:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5a8f3c 0%, #7bb84f 100%);
+    transform: scale(1.08);
+    box-shadow: 0 3px 10px rgba(45, 80, 22, 0.25);
+}
+
+.btn-cantidad-grid:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.btn-cantidad-grid:disabled {
+    background: linear-gradient(135deg, #ccc, #ddd);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.cantidad-controls-grid input[type="number"] {
+    width: 65px;
+    height: 36px;
+    text-align: center;
+    border: none;
+    border-left: 2px solid rgba(74, 124, 44, 0.2);
+    border-right: 2px solid rgba(74, 124, 44, 0.2);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2d5016;
+    background: white;
+    -moz-appearance: textfield;
+}
+
+.cantidad-controls-grid input[type="number"]::-webkit-outer-spin-button,
+.cantidad-controls-grid input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .btn-compra-rapida {
     display: flex;
     align-items: center;
@@ -972,6 +1062,8 @@
     font-size: 0.95rem;
     transition: all 0.3s ease;
     box-shadow: 0 3px 10px rgba(245, 158, 11, 0.4);
+    border: none;
+    cursor: pointer;
 }
 
 .btn-compra-rapida:hover {
@@ -996,6 +1088,8 @@
     font-size: 0.9rem;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(74, 124, 44, 0.3);
+    border: none;
+    cursor: pointer;
 }
 
 .btn-agregar-carrito:hover {

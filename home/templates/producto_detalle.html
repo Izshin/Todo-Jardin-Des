@@ -208,22 +208,56 @@
                         {% if producto.material %}
                         <li><strong>Material:</strong> {{ producto.material }}</li>
                         {% endif %}
-                        {% if producto.genero %}
-                        <li><strong>Tipo:</strong> {{ producto.get_genero_display }}</li>
-                        {% endif %}
                     </ul>
                 </div>
 
                 {% if producto.stock > 0 %}
+                <div class="cantidad-selector">
+                    <label for="cantidad">Cantidad a añadir:</label>
+                    <div class="cantidad-controls">
+                        <button type="button" class="btn-cantidad" onclick="disminuirCantidad()">-</button>
+                        <input type="number" id="cantidad" name="cantidad" value="1" min="1" max="{{ producto.stock }}" readonly>
+                        <button type="button" class="btn-cantidad" onclick="aumentarCantidad({{ producto.stock }})">+</button>
+                    </div>
+                </div>
+                
                 <div class="acciones">
-                    <a href="{% url 'agregar_al_carrito' producto.id %}" class="btn-añadir-carrito">
+                    <button onclick="agregarAlCarrito({{ producto.id }})" class="btn-añadir-carrito">
                         🛒 Añadir al Carrito
-                    </a>
-                    <a href="{% url 'comprar_ahora' producto.id %}" class="btn-comprar">
+                    </button>
+                    <button onclick="comprarAhora({{ producto.id }})" class="btn-comprar">
                         Comprar Ahora
-                    </a>
+                    </button>
                 </div>
                 {% endif %}
+                
+                <script>
+                function aumentarCantidad(maxStock) {
+                    const input = document.getElementById('cantidad');
+                    const currentValue = parseInt(input.value);
+                    if (currentValue < maxStock) {
+                        input.value = currentValue + 1;
+                    }
+                }
+                
+                function disminuirCantidad() {
+                    const input = document.getElementById('cantidad');
+                    const currentValue = parseInt(input.value);
+                    if (currentValue > 1) {
+                        input.value = currentValue - 1;
+                    }
+                }
+                
+                function agregarAlCarrito(productoId) {
+                    const cantidad = document.getElementById('cantidad').value;
+                    window.location.href = `/carrito/agregar/${productoId}/?cantidad=${cantidad}`;
+                }
+                
+                function comprarAhora(productoId) {
+                    const cantidad = document.getElementById('cantidad').value;
+                    window.location.href = `/checkout-rapido/${productoId}/?cantidad=${cantidad}`;
+                }
+                </script>
 
             </div>
 

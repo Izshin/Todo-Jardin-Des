@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.db import models
 from django.db.models import Q
-from .models import Cliente, Pedido, Producto, Categoria, Marca, ImagenProducto
+from .models import Cliente, Pedido, Producto, Categoria, Marca, ImagenProducto, ConfiguracionEnvio
 from decimal import Decimal
 
 # Admin Views
@@ -54,8 +54,10 @@ def admin_pedidos(request):
     pedidos = Pedido.objects.all()
     
     if buscar_pedido:
-        # Normalizar búsqueda: si empieza con "PED-", quitarlo
-        numero_busqueda = buscar_pedido.upper()
+        # Normalizar búsqueda: eliminar # si está presente
+        numero_busqueda = buscar_pedido.replace('#', '').strip().upper()
+        
+        # Si empieza con "PED-", quitarlo
         if numero_busqueda.startswith('PED-'):
             numero_busqueda = numero_busqueda[4:]
         
@@ -244,7 +246,6 @@ def admin_crear_producto(request):
         imagen = request.FILES.get('imagen')
         
         # Características del producto
-        genero = request.POST.get('genero') or None
         color = request.POST.get('color', '').strip() or None
         material = request.POST.get('material', '').strip() or None
         
@@ -273,7 +274,6 @@ def admin_crear_producto(request):
             stock=stock,
             categoria=categoria,
             marca=marca,
-            genero=genero,
             color=color,
             material=material,
             es_destacado=es_destacado,
@@ -324,7 +324,6 @@ def admin_editar_producto(request, producto_id):
         producto.stock = int(request.POST.get('stock', '0'))
         
         # Características del producto
-        producto.genero = request.POST.get('genero') or None
         producto.color = request.POST.get('color', '').strip() or None
         producto.material = request.POST.get('material', '').strip() or None
         
@@ -607,3 +606,39 @@ def admin_editar_usuario(request, usuario_id):
         'es_usuario_actual': usuario.id == cliente.id,
     }
     return render(request, 'admin_editar_usuario.html', contexto)
+
+
+def admin_configuracion_envio(request):
+    """Configuración de envío - Solo administradores"""
+    cliente_id = request.session.get('cliente_id')
+    
+    if not cliente_id:
+        return redirect('login')
+    
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+        # Verificación estricta: debe ser admin y no puede ser cuenta temporal
+        if not cliente.is_admin or cliente.email.startswith('temp_'):
+            return redirect('mainPage')
+    except Cliente.DoesNotExist:
+        return redirect('login')
+    
+    config = ConfiguracionEnvio.get_configuracion()
+    
+    if request.method == 'POST':
+        envio_minimo_gratis = request.POST.get('envio_minimo_gratis')
+        coste_envio_estandar = request.POST.get('coste_envio_estandar')
+        
+        if envio_minimo_gratis and coste_envio_estandar:
+            try:
+                config.envio_minimo_gratis = Decimal(envio_minimo_gratis)
+                config.coste_envio_estandar = Decimal(coste_envio_estandar)
+                config.save()
+                return redirect('admin_configuracion_envio')
+            except (ValueError, TypeError):
+                pass
+    
+    contexto = {
+        'config': config,
+    }
+    return render(request, 'admin_configuracion_envio.html', contexto)

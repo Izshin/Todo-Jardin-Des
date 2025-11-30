@@ -335,18 +335,28 @@
 
                             <div class="producto-acciones">
                                 {% if producto.stock > 0 %}
-                                <a href="{% url 'checkout_rapido' producto.id %}" class="btn-compra-rapida">
+                                <!-- Selector de cantidad -->
+                                <div class="cantidad-selector-grid">
+                                    <label>Cantidad:</label>
+                                    <div class="cantidad-controls-grid">
+                                        <button type="button" class="btn-cantidad-grid" onclick="disminuirCantidadGrid({{ producto.id }})">-</button>
+                                        <input type="number" id="cantidad-{{ producto.id }}" value="1" min="1" max="{{ producto.stock }}" readonly>
+                                        <button type="button" class="btn-cantidad-grid" onclick="aumentarCantidadGrid({{ producto.id }}, {{ producto.stock }})">+</button>
+                                    </div>
+                                </div>
+                                
+                                <button onclick="comprarAhoraGrid({{ producto.id }})" class="btn-compra-rapida">
                                     🚀 Compra Rápida
-                                </a>
+                                </button>
                                 <div>
-                                    <a href="{% url 'agregar_al_carrito' producto.id %}" class="btn-agregar-carrito">
+                                    <button onclick="agregarAlCarritoGrid({{ producto.id }})" class="btn-agregar-carrito">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <circle cx="9" cy="21" r="1"></circle>
                                             <circle cx="20" cy="21" r="1"></circle>
                                             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                                         </svg>
                                         Añadir
-                                    </a>
+                                    </button>
                                     <a href="{% url 'producto_detalle' producto.id %}" class="btn-ver-detalle">Ver Detalles</a>
                                 </div>
                                 {% else %}
@@ -456,6 +466,35 @@
 
         // Inicializar labels al cargar
         actualizarLabels();
+    </script>
+
+    <script>
+        // Funciones para el selector de cantidad en la grid
+        function aumentarCantidadGrid(productoId, maxStock) {
+            const input = document.getElementById('cantidad-' + productoId);
+            let cantidad = parseInt(input.value);
+            if (cantidad < maxStock) {
+                input.value = cantidad + 1;
+            }
+        }
+
+        function disminuirCantidadGrid(productoId) {
+            const input = document.getElementById('cantidad-' + productoId);
+            let cantidad = parseInt(input.value);
+            if (cantidad > 1) {
+                input.value = cantidad - 1;
+            }
+        }
+
+        function agregarAlCarritoGrid(productoId) {
+            const cantidad = document.getElementById('cantidad-' + productoId).value;
+            window.location.href = `/carrito/agregar/${productoId}/?cantidad=${cantidad}`;
+        }
+
+        function comprarAhoraGrid(productoId) {
+            const cantidad = document.getElementById('cantidad-' + productoId).value;
+            window.location.href = `/checkout-rapido/${productoId}/?cantidad=${cantidad}`;
+        }
     </script>
 
 </body>

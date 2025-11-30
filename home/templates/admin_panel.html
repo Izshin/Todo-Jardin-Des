@@ -27,6 +27,7 @@
                         <a href="{% url 'admin_pedidos' %}">Pedidos</a>
                         <a href="{% url 'admin_productos' %}">Productos</a>
                         <a href="{% url 'admin_usuarios' %}">Usuarios</a>
+                        <a href="{% url 'admin_configuracion_envio' %}">Configuración Envío</a>
                     </div>
                 </div>
             </div>
@@ -77,6 +78,12 @@
                 <img src="{% static 'images/character01-svgrepo-com.svg' %}" alt="Usuarios" width="48" height="48" style="filter: invert(38%) sepia(96%) saturate(1826%) hue-rotate(201deg) brightness(98%) contrast(92%);">
                 <h2>Gestión de Usuarios</h2>
                 <p>Ver y actualizar usuarios</p>
+            </a>
+
+            <a href="{% url 'admin_configuracion_envio' %}" class="admin-card">
+                <img src="{% static 'images/delivery-cardboard-svgrepo-com.svg' %}" alt="Envío" width="48" height="48" style="filter: invert(38%) sepia(96%) saturate(1826%) hue-rotate(201deg) brightness(98%) contrast(92%);">
+                <h2>Configuración de Envío</h2>
+                <p>Configurar costes y mínimos de envío</p>
             </a>
         </div>
     </main>

@@ -60,15 +60,15 @@
             <p class="mensaje-exito">Tu pedido ha sido procesado correctamente</p>
             
             {% if fue_invitado %}
-            <div class="invitado-info" style="background-color: #e3f2fd; border: 2px solid #2196f3; border-radius: 8px; padding: 15px; margin: 20px 0; display: flex; align-items: center; gap: 12px;">
+            <div class="invitado-info">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="12" cy="12" r="11" fill="none" stroke="#2196f3" stroke-width="2"></circle>
                     <polygon points="10.8,4 11.6,15.2 12.4,15.2 13.2,4" fill="#2196f3"></polygon>
                     <rect x="11.4" y="17.6" width="1.2" height="1.2" fill="#2196f3"></rect>
                 </svg>
                 <div>
-                    <strong style="color: #1976d2;">Pedido realizado como invitado</strong>
-                    <p style="margin: 5px 0 0 0; color: #555;">¡Gracias por tu compra! Para acceder al historial de pedidos y otras ventajas, <a href="{% url 'registro' %}" style="color: #1976d2; text-decoration: underline;">crea una cuenta</a>.</p>
+                    <strong>Pedido realizado como invitado</strong>
+                    <p>¡Gracias por tu compra! Para acceder al historial de pedidos y otras ventajas, <a href="{% url 'registro' %}">crea una cuenta</a>.</p>
                 </div>
             </div>
             {% endif %}

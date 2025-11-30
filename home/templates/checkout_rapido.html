@@ -71,7 +71,7 @@
                 <form method="POST" action="{% url 'procesar_checkout_rapido' %}" id="checkout-rapido-form">
                     {% csrf_token %}
                     <input type="hidden" name="producto_id" value="{{ producto.id }}">
-                    <input type="hidden" name="cantidad" value="1" id="cantidad-input">
+                    <input type="hidden" name="cantidad" value="{{ cantidad }}" id="cantidad-input">
                     
                     <!-- SECCIÓN 1: Datos Personales -->
                     <div class="form-section">
@@ -235,7 +235,7 @@
                         <p class="precio-unitario">€{{ producto.precio }} /ud</p>
                         <div class="cantidad-selector">
                             <button type="button" class="btn-cantidad" id="btn-menos">-</button>
-                            <input type="number" value="1" min="1" max="{{ producto.stock }}" id="cantidad-display" readonly>
+                            <input type="number" value="{{ cantidad }}" min="1" max="{{ producto.stock }}" id="cantidad-display" readonly>
                             <button type="button" class="btn-cantidad" id="btn-mas">+</button>
                         </div>
                         <p class="stock-disponible">Stock disponible: {{ producto.stock }}</p>

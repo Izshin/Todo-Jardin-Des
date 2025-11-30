@@ -281,6 +281,11 @@
     color: #92400E;
 }
 
+.estado-en_espera_pago {
+    background: #FED7AA;
+    color: #C2410C;
+}
+
 .estado-confirmado {
     background: #DBEAFE;
     color: #1E40AF;
@@ -1282,4 +1287,174 @@
         width: 20px;
         height: 20px;
     }
+}
+
+/* Estilos para configuración de envío */
+.config-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.config-form .form-section {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    padding: 2rem;
+    border-radius: 12px;
+    border: 2px solid #bae6fd;
+    margin-bottom: 2rem;
+}
+
+.config-form .form-section h2 {
+    color: #1E3A8A;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.config-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.config-form .form-group label {
+    display: block;
+    font-weight: 600;
+    color: #1E3A8A;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.config-form .form-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid #bae6fd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.config-form .form-group input:focus {
+    outline: none;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.config-form .form-group small {
+    display: block;
+    margin-top: 0.5rem;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.info-box {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 2px solid #93c5fd;
+    margin-bottom: 2rem;
+}
+
+.info-box h3 {
+    color: #1E3A8A;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-box p {
+    color: #1E40AF;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.info-box p:last-child {
+    margin-bottom: 0;
+}
+
+.info-box strong {
+    color: #1E3A8A;
+    font-weight: 700;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-guardar {
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+    color: white;
+    padding: 1rem 2.5rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-guardar:hover {
+    background: linear-gradient(135deg, #2563EB 0%, #1E3A8A 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.btn-cancelar {
+    background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+    color: #374151;
+    padding: 1rem 2.5rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-cancelar:hover {
+    background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%);
+    transform: translateY(-2px);
+}
+
+/* Contenedor específico para configuración de envío */
+.envio-config-container {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.1);
+    overflow: auto;
+    max-height: calc(100vh - 300px);
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Custom Scrollbar para configuración de envío */
+.envio-config-container::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.envio-config-container::-webkit-scrollbar-track {
+    background: #EFF6FF;
+    border-radius: 10px;
+}
+
+.envio-config-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #3B82F6, #1E40AF);
+    border-radius: 10px;
+    border: 2px solid #EFF6FF;
+}
+
+.envio-config-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #2563EB, #1E3A8A);
 }

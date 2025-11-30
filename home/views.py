@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db import models
 from .models import (
     Escaparate, Articulo, Cliente, 
-    Producto, Categoria, Marca, Carrito, ItemCarrito, Pedido, ItemPedido
+    Producto, Categoria, Marca, Carrito, ItemCarrito, Pedido, ItemPedido, ConfiguracionEnvio
 )
 from decimal import Decimal
 import uuid
@@ -27,6 +27,21 @@ gateway = braintree.BraintreeGateway(
 
 # Email especial para la cuenta de invitado del sistema
 EMAIL_INVITADO_SISTEMA = 'invitado@sistema.local'
+
+
+def calcular_coste_envio(subtotal):
+    """Calcular el coste de envío según la configuración del sistema"""
+    config = ConfiguracionEnvio.get_configuracion()
+    if subtotal >= config.envio_minimo_gratis:
+        return Decimal('0.00')
+    return config.coste_envio_estandar
+
+
+def determinar_estado_pedido(metodo_pago):
+    """Determinar el estado inicial del pedido según el método de pago"""
+    if metodo_pago == 'reembolso':
+        return 'en_espera_pago'
+    return 'confirmado'
 
 def obtener_invitado_sistema():
     """Obtiene o crea la cuenta de invitado única del sistema"""
@@ -601,7 +616,7 @@ def carrito(request):
         })
     
     iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))  # 21% IVA
-    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')  # Envío gratis > 50€
+    coste_envio = calcular_coste_envio(subtotal)
     total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
     
     contexto = {
@@ -618,6 +633,14 @@ def carrito(request):
 def agregar_al_carrito(request, producto_id):
     """Agregar producto al carrito"""
     cliente_id = request.session.get('cliente_id')
+    
+    # Obtener la cantidad del parámetro GET (por defecto 1)
+    try:
+        cantidad = int(request.GET.get('cantidad', 1))
+        if cantidad < 1:
+            cantidad = 1
+    except (ValueError, TypeError):
+        cantidad = 1
     
     # Si no hay cliente logueado, crear uno temporal para esta sesión
     if not cliente_id:
@@ -662,6 +685,10 @@ def agregar_al_carrito(request, producto_id):
     
     producto = get_object_or_404(Producto, id=producto_id)
     
+    # Validar que la cantidad no supere el stock disponible
+    if cantidad > producto.stock:
+        cantidad = producto.stock
+    
     # Obtener o crear carrito
     carrito_obj, created = Carrito.objects.get_or_create(cliente=cliente)
     
@@ -669,15 +696,15 @@ def agregar_al_carrito(request, producto_id):
     item_carrito, created = ItemCarrito.objects.get_or_create(
         carrito=carrito_obj,
         producto=producto,
-        defaults={'cantidad': 1}
+        defaults={'cantidad': cantidad}
     )
     
     if not created:
         # Si ya existe, verificar que no supere el stock
-        nueva_cantidad = item_carrito.cantidad + 1
+        nueva_cantidad = item_carrito.cantidad + cantidad
         if nueva_cantidad > producto.stock:
-            # Redirigir con mensaje de error (se puede mejorar con mensajes de Django)
-            return redirect('productos')
+            # Ajustar a la cantidad máxima disponible
+            nueva_cantidad = producto.stock
         item_carrito.cantidad = nueva_cantidad
         item_carrito.save()
     else:
@@ -695,6 +722,14 @@ def agregar_al_carrito(request, producto_id):
 def comprar_ahora(request, producto_id):
     """Agregar producto al carrito y redirigir al carrito para compra inmediata"""
     cliente_id = request.session.get('cliente_id')
+    
+    # Obtener la cantidad del parámetro GET (por defecto 1)
+    try:
+        cantidad = int(request.GET.get('cantidad', 1))
+        if cantidad < 1:
+            cantidad = 1
+    except (ValueError, TypeError):
+        cantidad = 1
     
     # Si no hay cliente logueado, crear uno temporal para esta sesión
     if not cliente_id:
@@ -740,6 +775,10 @@ def comprar_ahora(request, producto_id):
     
     producto = get_object_or_404(Producto, id=producto_id)
     
+    # Validar que la cantidad no supere el stock disponible
+    if cantidad > producto.stock:
+        cantidad = producto.stock
+    
     # Obtener o crear carrito
     carrito_obj, created = Carrito.objects.get_or_create(cliente=cliente)
     
@@ -747,15 +786,17 @@ def comprar_ahora(request, producto_id):
     item_carrito, created = ItemCarrito.objects.get_or_create(
         carrito=carrito_obj,
         producto=producto,
-        defaults={'cantidad': 1}
+        defaults={'cantidad': cantidad}
     )
     
     if not created:
         # Si ya existe, verificar que no supere el stock
-        nueva_cantidad = item_carrito.cantidad + 1
-        if nueva_cantidad <= producto.stock:
-            item_carrito.cantidad = nueva_cantidad
-            item_carrito.save()
+        nueva_cantidad = item_carrito.cantidad + cantidad
+        if nueva_cantidad > producto.stock:
+            # Ajustar a la cantidad máxima disponible
+            nueva_cantidad = producto.stock
+        item_carrito.cantidad = nueva_cantidad
+        item_carrito.save()
     else:
         # Si es nuevo, verificar que haya stock disponible
         if producto.stock < 1:
@@ -874,7 +915,7 @@ def checkout(request):
         })
     
     iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
-    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    coste_envio = calcular_coste_envio(subtotal)
     total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
     
     contexto = {
@@ -945,7 +986,7 @@ def checkout_paso2(request):
         })
     
     iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
-    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    coste_envio = calcular_coste_envio(subtotal)
     total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
     
     # Generar token de cliente para Braintree Drop-in UI
@@ -1017,7 +1058,7 @@ def checkout_paso3(request):
         })
     
     iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
-    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    coste_envio = calcular_coste_envio(subtotal)
     total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
     
     contexto = {
@@ -1066,7 +1107,7 @@ def procesar_pago(request):
     
     subtotal = subtotal.quantize(Decimal('0.01'))
     iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
-    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    coste_envio = calcular_coste_envio(subtotal)
     descuento = Decimal('0.00')
     total = (subtotal + iva + coste_envio - descuento).quantize(Decimal('0.01'))
     
@@ -1126,13 +1167,16 @@ def procesar_pago(request):
     
     telefono = cliente.telefono
     
-    # Crear el pedido DIRECTAMENTE EN ESTADO CONFIRMADO (sin token)
+    # Determinar estado inicial según método de pago
+    estado_pedido = determinar_estado_pedido(metodo_pago)
+    
+    # Crear el pedido con el estado adecuado
     numero_pedido = f"PED-{uuid.uuid4().hex[:8].upper()}"
     
     pedido = Pedido.objects.create(
         cliente=cliente,
         numero_pedido=numero_pedido,
-        token_confirmacion=None,  # NULL porque ya está confirmado
+        token_confirmacion=None,  # NULL porque no requiere confirmación manual
         subtotal=subtotal,
         impuestos=iva,
         coste_entrega=coste_envio,
@@ -1142,7 +1186,7 @@ def procesar_pago(request):
         tipo_entrega=tipo_entrega,
         direccion_envio=direccion_envio,
         telefono=telefono,
-        estado='confirmado'  # ESTADO CONFIRMADO DIRECTAMENTE
+        estado=estado_pedido  # 'confirmado' para tarjeta, 'en_espera_pago' para reembolso
     )
     
     # Crear items del pedido y REDUCIR STOCK INMEDIATAMENTE
@@ -1756,33 +1800,79 @@ def checkout_rapido(request, producto_id):
     """Vista de checkout rápido - Todo en un solo paso"""
     producto = get_object_or_404(Producto, id=producto_id)
     
+    # Obtener la cantidad del parámetro GET (por defecto 1)
+    try:
+        cantidad = int(request.GET.get('cantidad', 1))
+        if cantidad < 1:
+            cantidad = 1
+        # Verificar que no exceda el stock
+        if cantidad > producto.stock:
+            cantidad = producto.stock
+    except (ValueError, TypeError):
+        cantidad = 1
+    
     # Verificar stock
     if producto.stock <= 0:
         return redirect('producto_detalle', producto_id=producto_id)
     
-    # Obtener cliente si está autenticado
+    # Obtener o crear cliente (igual que checkout normal)
     cliente_id = request.session.get('cliente_id')
-    cliente = None
-    es_invitado = False
     
-    if cliente_id:
-        try:
-            cliente = Cliente.objects.get(id=cliente_id)
-            # Verificar si es invitado
-            es_invitado = request.session.get('es_invitado', False) or cliente.email == EMAIL_INVITADO_SISTEMA
-            # Si es invitado, no pasar datos del cliente para que no se autorellenen
-            if es_invitado:
-                cliente = None
-        except Cliente.DoesNotExist:
-            pass
+    # Si no hay cliente, crear uno temporal
+    if not cliente_id:
+        import uuid
+        temp_email = f'temp_{uuid.uuid4().hex[:12]}@temporal.local'
+        invitado_temp = Cliente.objects.create(
+            nombre='Invitado',
+            apellidos='Temporal',
+            email=temp_email,
+            telefono='000000000',
+            direccion='N/A',
+            ciudad='N/A',
+            codigo_postal='00000',
+            password=''
+        )
+        request.session['cliente_id'] = invitado_temp.id
+        request.session['es_invitado'] = True
+        cliente_id = invitado_temp.id
     
-    # Calcular totales para cantidad 1
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+        # Si es la cuenta compartida, crear uno temporal
+        if cliente.email == EMAIL_INVITADO_SISTEMA:
+            import uuid
+            temp_email = f'temp_{uuid.uuid4().hex[:12]}@temporal.local'
+            invitado_temp = Cliente.objects.create(
+                nombre='Invitado',
+                apellidos='Temporal',
+                email=temp_email,
+                telefono='000000000',
+                direccion='N/A',
+                ciudad='N/A',
+                codigo_postal='00000',
+                password=''
+            )
+            request.session['cliente_id'] = invitado_temp.id
+            request.session['es_invitado'] = True
+            cliente = invitado_temp
+    except Cliente.DoesNotExist:
+        request.session.flush()
+        return redirect('mainPage')
+    
+    # Verificar si es invitado
+    es_invitado = request.session.get('es_invitado', False) or cliente.email.endswith('@temporal.local') or cliente.email == EMAIL_INVITADO_SISTEMA
+    
+    # Si es invitado, no pasar datos del cliente para que no se autorellenen
+    cliente_datos = None if es_invitado else cliente
+    
+    # Calcular totales para la cantidad especificada
     precio = producto.precio
-    subtotal = precio
+    subtotal = precio * cantidad
     iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
-    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    coste_envio = calcular_coste_envio(subtotal)
     total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
-    envio_falta = (Decimal('50.00') - subtotal).quantize(Decimal('0.01')) if subtotal < 50 else Decimal('0.00')
+    config = ConfiguracionEnvio.get_configuracion()
+    envio_falta = (config.envio_minimo_gratis - subtotal).quantize(Decimal('0.01')) if subtotal < config.envio_minimo_gratis else Decimal('0.00')
     
     # Generar token de Braintree
     try:
@@ -1793,7 +1883,8 @@ def checkout_rapido(request, producto_id):
     
     contexto = {
         'producto': producto,
-        'cliente': cliente,
+        'cantidad': cantidad,
+        'cliente': cliente_datos,
         'es_invitado': es_invitado,
         'subtotal': subtotal.quantize(Decimal('0.01')),
         'iva': iva,
@@ -1865,7 +1956,7 @@ def procesar_checkout_rapido(request):
         precio = producto.precio
         subtotal = (precio * cantidad).quantize(Decimal('0.01'))
         iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
-        coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+        coste_envio = calcular_coste_envio(subtotal)
         total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
         
         # Procesar transacción con Braintree
@@ -1908,7 +1999,7 @@ def procesar_checkout_rapido(request):
     precio = producto.precio
     subtotal = (precio * cantidad).quantize(Decimal('0.01'))
     iva = (subtotal * Decimal('0.21')).quantize(Decimal('0.01'))
-    coste_envio = Decimal('5.99') if subtotal < 50 else Decimal('0.00')
+    coste_envio = calcular_coste_envio(subtotal)
     total = (subtotal + iva + coste_envio).quantize(Decimal('0.01'))
     
     # Crear dirección de envío
@@ -1917,13 +2008,16 @@ def procesar_checkout_rapido(request):
     else:
         direccion_envio = "Recogida en tienda"
     
-    # Crear el pedido DIRECTAMENTE EN ESTADO CONFIRMADO (sin token)
+    # Determinar estado inicial según método de pago
+    estado_pedido = determinar_estado_pedido(metodo_pago)
+    
+    # Crear el pedido con el estado adecuado
     numero_pedido = f"PED-{uuid.uuid4().hex[:8].upper()}"
     
     pedido = Pedido.objects.create(
         cliente=cliente,
         numero_pedido=numero_pedido,
-        token_confirmacion=None,  # NULL porque ya está confirmado
+        token_confirmacion=None,  # NULL porque no requiere confirmación manual
         subtotal=subtotal,
         impuestos=iva,
         coste_entrega=coste_envio,
@@ -1933,7 +2027,7 @@ def procesar_checkout_rapido(request):
         tipo_entrega=tipo_entrega,
         direccion_envio=direccion_envio,
         telefono=telefono,
-        estado='confirmado'  # ESTADO CONFIRMADO DIRECTAMENTE
+        estado=estado_pedido  # 'confirmado' para tarjeta, 'en_espera_pago' para reembolso
     )
     
     # Crear item del pedido

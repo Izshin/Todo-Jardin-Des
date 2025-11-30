@@ -63,6 +63,7 @@ urlpatterns = [
     path('admin-panel/usuarios/<int:usuario_id>/editar/', views_admin.admin_editar_usuario, name='admin_editar_usuario'),
     path('admin-panel/usuarios/<int:usuario_id>/toggle-admin/', views_admin.admin_toggle_admin, name='admin_toggle_admin'),
     path('admin-panel/usuarios/<int:usuario_id>/eliminar/', views_admin.admin_eliminar_usuario, name='admin_eliminar_usuario'),
+    path('admin-panel/configuracion-envio/', views_admin.admin_configuracion_envio, name='admin_configuracion_envio'),
     
     path('admin/', admin.site.urls),
 ]

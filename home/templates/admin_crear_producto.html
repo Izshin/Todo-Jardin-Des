@@ -24,8 +24,9 @@
                     <div class="admin-dropdown-content">
                         <a href="{% url 'admin_panel' %}">Dashboard</a>
                         <a href="{% url 'admin_pedidos' %}">Pedidos</a>
-                        <a href="{% url 'admin_productos' %}" class="active">Productos</a>
+                        <a href="{% url 'admin_productos' %}">Productos</a>
                         <a href="{% url 'admin_usuarios' %}">Usuarios</a>
+                        <a href="{% url 'admin_configuracion_envio' %}">Configuración Envío</a>
                     </div>
                 </div>
             </div>
@@ -102,17 +103,6 @@
                         <input type="text" id="nueva_marca" name="nueva_marca" placeholder="Nombre de la nueva marca">
                         <small style="display: block; margin-top: 0.5rem; color: #1E3A8A;">Si rellenas esto, se creará una nueva marca</small>
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="genero">Tipo</label>
-                    <select id="genero" name="genero">
-                        <option value="">Sin especificar</option>
-                        <option value="hombre">Hombre</option>
-                        <option value="mujer">Mujer</option>
-                        <option value="unisex">Unisex</option>
-                        <option value="nino">Niño</option>
-                    </select>
                 </div>
                 
                 <div class="form-group">

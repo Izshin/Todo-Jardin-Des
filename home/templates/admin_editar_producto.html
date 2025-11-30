@@ -24,8 +24,9 @@
                     <div class="admin-dropdown-content">
                         <a href="{% url 'admin_panel' %}">Dashboard</a>
                         <a href="{% url 'admin_pedidos' %}">Pedidos</a>
-                        <a href="{% url 'admin_productos' %}" class="active">Productos</a>
+                        <a href="{% url 'admin_productos' %}">Productos</a>
                         <a href="{% url 'admin_usuarios' %}">Usuarios</a>
+                        <a href="{% url 'admin_configuracion_envio' %}">Configuración Envío</a>
                     </div>
                 </div>
             </div>
@@ -104,17 +105,6 @@
                         <label for="nueva_marca">Nueva Marca:</label>
                         <input type="text" id="nueva_marca" name="nueva_marca">
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="genero">Tipo</label>
-                    <select id="genero" name="genero">
-                        <option value="">Sin especificar</option>
-                        <option value="hombre" {% if producto.genero == 'hombre' %}selected{% endif %}>Hombre</option>
-                        <option value="mujer" {% if producto.genero == 'mujer' %}selected{% endif %}>Mujer</option>
-                        <option value="unisex" {% if producto.genero == 'unisex' %}selected{% endif %}>Unisex</option>
-                        <option value="nino" {% if producto.genero == 'nino' %}selected{% endif %}>Niño</option>
-                    </select>
                 </div>
                 
                 <div class="form-group">

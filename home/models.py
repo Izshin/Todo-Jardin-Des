@@ -51,19 +51,11 @@ class Categoria(models.Model):
 
 
 class Producto(models.Model):
-    GENERO_CHOICES = [
-        ('hombre', 'Hombre'),
-        ('mujer', 'Mujer'),
-        ('unisex', 'Unisex'),
-        ('nino', 'Niño'),
-    ]
-
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True, null=True)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     marca = models.ForeignKey(Marca, on_delete=models.SET_NULL, null=True, blank=True, related_name='productos')
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True, related_name='productos')
-    genero = models.CharField(max_length=20, choices=GENERO_CHOICES, blank=True, null=True)
     color = models.CharField(max_length=50, blank=True, null=True)
     material = models.CharField(max_length=100, blank=True, null=True)
     stock = models.IntegerField(default=0)
@@ -105,6 +97,7 @@ class ImagenProducto(models.Model):
 class Pedido(models.Model):
     ESTADO_CHOICES = [
         ('pendiente', 'Pendiente'),
+        ('en_espera_pago', 'En espera de pago'),
         ('confirmado', 'Confirmado'),
         ('procesando', 'Procesando'),
         ('enviado', 'Enviado'),
@@ -173,3 +166,33 @@ class ItemCarrito(models.Model):
 
     def __str__(self):
         return f"{self.cantidad}x {self.producto.nombre} - Carrito {self.carrito.id}"
+
+
+class ConfiguracionEnvio(models.Model):
+    """Configuración global del sistema de envíos"""
+    envio_minimo_gratis = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=50.00,
+        help_text="Monto mínimo de compra para envío gratuito (€)"
+    )
+    coste_envio_estandar = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=5.99,
+        help_text="Coste del envío estándar (€)"
+    )
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuración de Envío"
+        verbose_name_plural = "Configuración de Envío"
+
+    def __str__(self):
+        return f"Envío gratis desde €{self.envio_minimo_gratis}"
+
+    @classmethod
+    def get_configuracion(cls):
+        """Obtener o crear la configuración única del sistema"""
+        config, created = cls.objects.get_or_create(id=1)
+        return config
